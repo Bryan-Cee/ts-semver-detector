@@ -6,12 +6,29 @@
   "bin": {
     "typeshift": "./dist/cli/index.js"
   },
+  "files": [
+    "dist/**/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bryan-Cee/typeshift.git"
+  },
+  "homepage": "https://github.com/Bryan-Cee/typeshift#readme",
+  "bugs": {
+    "url": "https://github.com/Bryan-Cee/typeshift/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "test": "jest",
     "start": "ts-node src/cli/index.ts",
     "lint": "eslint src/**/*.ts",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint",
+    "version": "npm run lint && git add -A src",
+    "postversion": "git push && git push --tags"
   },
   "keywords": [
     "typescript",
