@@ -28,7 +28,10 @@
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
     "version": "npm run lint && git add -A src",
-    "postversion": "git push && git push --tags"
+    "postversion": "git push && git push --tags",
+    "release:patch": "npm version patch",
+    "release:minor": "npm version minor",
+    "release:major": "npm version major"
   },
   "keywords": [
     "typescript",
