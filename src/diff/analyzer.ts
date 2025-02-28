@@ -43,29 +43,18 @@ export class TypeScriptDiffAnalyzer {
     newSourceFile: ts.SourceFile
   ): AnalysisResult {
     try {
-      console.log(`Analyzing files: ${oldSourceFile.fileName} -> ${newSourceFile.fileName}`);
-      
       const oldExports = this.parser.getExportedDeclarations(oldSourceFile);
-      console.log(`Found ${oldExports.length} exports in old file`);
-      
       const newExports = this.parser.getExportedDeclarations(newSourceFile);
-      console.log(`Found ${newExports.length} exports in new file`);
 
       const changes: Change[] = [];
       const oldExportMap = new Map<string, ts.Declaration[]>();
       const newExportMap = new Map<string, ts.Declaration[]>();
 
       // Group declarations by name
-      console.log('Grouping old declarations by name');
       this.groupDeclarationsByName(oldExports, oldExportMap);
-      console.log(`Grouped ${oldExportMap.size} old declarations`);
-      
-      console.log('Grouping new declarations by name');
       this.groupDeclarationsByName(newExports, newExportMap);
-      console.log(`Grouped ${newExportMap.size} new declarations`);
 
       // Check for removed declarations
-      console.log('Checking for removed declarations');
       for (const [name, oldDeclarations] of oldExportMap) {
         if (!newExportMap.has(name)) {
           try {
@@ -86,7 +75,6 @@ export class TypeScriptDiffAnalyzer {
       }
 
       // Check for added and modified declarations
-      console.log('Checking for added and modified declarations');
       for (const [name, newDeclarations] of newExportMap) {
         try {
           const oldDeclarations = oldExportMap.get(name);
@@ -111,12 +99,9 @@ export class TypeScriptDiffAnalyzer {
           for (const rule of this.rules) {
             try {
               if (rule.canHandle(oldDeclarations[0], newDeclarations[0])) {
-                console.log(`Rule ${rule.constructor.name} can handle ${name}`);
-                
                 // Skip if this node has been already processed with overrideDefault
                 const nodeKey = `${oldDeclarations[0].pos}-${newDeclarations[0].pos}`;
                 if (handledNodes.has(nodeKey)) {
-                  console.log(`Skipping already handled node ${name}`);
                   continue;
                 }
                 
@@ -125,13 +110,10 @@ export class TypeScriptDiffAnalyzer {
                   newDeclarations[0]
                 );
                 
-                console.log(`Rule ${rule.constructor.name} found ${ruleChanges.length} changes for ${name}`);
-                
                 // Check if any changes should override default behavior
                 for (const change of ruleChanges) {
                   if (change.details?.overrideDefault) {
                     handledNodes.add(nodeKey);
-                    console.log(`Marking ${name} as handled with override`);
                     break;
                   }
                 }
@@ -147,7 +129,6 @@ export class TypeScriptDiffAnalyzer {
         }
       }
 
-      console.log(`Analysis complete. Found ${changes.length} changes.`);
       return {
         changes,
         summary: this.generateSummary(changes),
@@ -180,17 +161,12 @@ export class TypeScriptDiffAnalyzer {
 
   protected getDeclarationName(node: ts.Declaration): string | undefined {
     try {
-      console.log(`Getting name for node kind: ${ts.SyntaxKind[node.kind]}`);
-      
       // Special handling for different node types
       if (ts.isVariableDeclaration(node)) {
-        console.log('Node is VariableDeclaration');
         if (node.name && ts.isIdentifier(node.name)) {
-          console.log(`Found identifier name: ${node.name.text}`);
           return node.name.text;
         } else if (node.name && typeof (node.name as ts.Node).getText === 'function') {
           const text = (node.name as ts.Node).getText();
-          console.log(`Got name via getText: ${text}`);
           return text;
         }
       } 
@@ -201,98 +177,68 @@ export class TypeScriptDiffAnalyzer {
           ts.isInterfaceDeclaration(node) || 
           ts.isTypeAliasDeclaration(node)) {
         
-        console.log(`Node is ${ts.SyntaxKind[node.kind]}`);
         // Some declarations might have an optional name (like default exports)
         if (node.name) {
-          console.log('Node has name property');
           if (ts.isIdentifier(node.name)) {
-            console.log(`Found identifier name: ${node.name.text}`);
             return node.name.text;
           } else if (typeof (node.name as ts.Node).getText === 'function') {
             const text = (node.name as ts.Node).getText();
-            console.log(`Got name via getText: ${text}`);
             return text;
-          } else {
-            console.log(`Name property type: ${typeof node.name}, isIdentifier: ${ts.isIdentifier(node.name)}`);
           }
-        } else {
-          console.log('Node does not have name property');
         }
       }
       
       // Try to get name from node.name if it exists
       if ('name' in node && node.name) {
-        console.log('Trying to get name from node.name property');
         const nameNode = node.name as ts.Node;
-        console.log(`Name node type: ${typeof nameNode}`);
         
         if (ts.isIdentifier(nameNode)) {
-          console.log(`Found identifier name: ${nameNode.text}`);
           return nameNode.text;
         } else if (typeof nameNode.getText === 'function') {
           const text = nameNode.getText();
-          console.log(`Got name via getText: ${text}`);
           return text;
         } else if (typeof nameNode === 'string') {
-          console.log(`Name is string: ${nameNode}`);
           return nameNode as string;
-        } else {
-          console.log('Could not extract name from nameNode');
         }
       }
       
       // Try to get name from symbol
       if ('symbol' in node && node.symbol) {
-        console.log('Trying to get name from symbol');
         const symbol = node.symbol as ts.Symbol;
         if (symbol && typeof symbol === 'object' && 'name' in symbol) {
-          console.log(`Found symbol name: ${symbol.name}`);
           return symbol.name as string;
-        } else {
-          console.log('Symbol does not have name property');
         }
       }
       
       // Try to get name from the node's text if it's short enough
       if (typeof (node as ts.Node).getText === 'function') {
-        console.log('Trying to get name from node text');
         try {
           const text = (node as ts.Node).getText();
           if (text && text.length < 100) { // Avoid huge texts
-            console.log(`Using node text as name: ${text}`);
             return text;
-          } else {
-            console.log('Node text too long to use as name');
           }
         } catch (e) {
-          console.log('Error getting node text:', e);
+          // Silently continue to next method
         }
       }
       
       // Generate a unique identifier based on position
-      console.log('Generating name based on position');
       const sourceFile = node.getSourceFile();
       if (sourceFile) {
         try {
           const pos = sourceFile.getLineAndCharacterOfPosition(node.getStart());
           const fileName = sourceFile.fileName.split('/').pop() || 'unknown';
           const name = `anonymous_${fileName}_${pos.line}_${pos.character}`;
-          console.log(`Generated position-based name: ${name}`);
           return name;
         } catch (e) {
-          console.log('Error getting position:', e);
           // If we can't get position, use kind and raw position
           const name = `anonymous_${ts.SyntaxKind[node.kind]}_${node.pos}`;
-          console.log(`Generated fallback name: ${name}`);
           return name;
         }
-      } else {
-        console.log('No source file available');
       }
       
       // Last resort fallback
       const name = `anonymous_${ts.SyntaxKind[node.kind]}_${Date.now()}`;
-      console.log(`Generated last resort name: ${name}`);
       return name;
       
     } catch (error) {
