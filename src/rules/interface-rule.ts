@@ -484,10 +484,15 @@ export class InterfaceRule extends BaseRule {
   
   private getElementText(element: ts.TypeElement): string {
     try {
-      return element.getText().trim();
+      // Use the parser's robust method to get text
+      return this.parser.getNodeText(element);
     } catch (error) {
+      console.error('Error getting element text:', error);
+      // Fallback to simple name if possible
       if (ts.isPropertySignature(element) || ts.isMethodSignature(element)) {
-        return element.name.getText();
+        if (ts.isIdentifier(element.name)) {
+          return element.name.escapedText.toString();
+        }
       }
       return 'unknown';
     }
