@@ -137,11 +137,6 @@ export class TypeRule extends BaseRule {
         oldTypeText.includes('T extends string') &&
         newTypeText.includes('T extends string | number');
 
-      // Get type constraint changes
-      const oldConstraint = oldType.typeParameters?.[0]?.constraint?.getText();
-      const newConstraint = newType.typeParameters?.[0]?.constraint?.getText();
-      const hasConstraintChange = oldConstraint !== newConstraint;
-
       // Check for type narrowing (breaking change)
       const isNarrowedType = !isNewAssignableToOld && isOldAssignableToNew;
 
