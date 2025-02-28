@@ -21,6 +21,7 @@ const examples = {
   'web-patterns': 'Web API Patterns',
   'dom-apis': 'DOM API Types',
   'state-management': 'State Management Types',
+  'html-output': 'HTML Output Format Example',
 };
 
 function printHeader(text) {
