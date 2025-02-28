@@ -5,7 +5,7 @@ import * as chalk from 'chalk';
 import * as path from 'path';
 import * as fs from 'fs';
 import { TypeScriptDiffAnalyzer } from '../diff/analyzer';
-import { AnalysisResult, Change, CliOptions } from '../types';
+import { AnalysisResult, Change } from '../types';
 import { ConfigLoader } from '../config/config-loader';
 
 const program = new Command();
