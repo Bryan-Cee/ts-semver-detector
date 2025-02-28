@@ -14,7 +14,7 @@ describe('TypeInterfaceConversionRule', () => {
 
   beforeEach(() => {
     // Create temporary directory for test files
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'typeshift-test-'));
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ts-semver-detector-test-'));
     oldFilePath = path.join(tempDir, 'old.ts');
     newFilePath = path.join(tempDir, 'new.ts');
     

@@ -20,19 +20,19 @@ A command-line tool that analyzes changes between TypeScript definition files (.
 ## Installation
 
 ```bash
-npm install -g typeshift
+npm install -g ts-semver-detector
 ```
 
 ## Usage
 
 Basic usage:
 ```bash
-typeshift --old oldFile.d.ts --new newFile.d.ts
+ts-semver-detector --old oldFile.d.ts --new newFile.d.ts
 ```
 
 With options:
 ```bash
-typeshift --old oldFile.d.ts --new newFile.d.ts --format html --output report.html --config ./config.js
+ts-semver-detector --old oldFile.d.ts --new newFile.d.ts --format html --output report.html --config ./config.js
 ```
 
 ### Options
@@ -51,9 +51,9 @@ typeshift --old oldFile.d.ts --new newFile.d.ts --format html --output report.ht
 ## Configuration
 
 The tool can be configured using a configuration file. It supports the following formats:
-- JavaScript file (typeshift.config.js)
-- JSON file (typeshift.config.json)
-- RC file (.typeshiftrc, .typeshiftrc.json, .typeshiftrc.js)
+- JavaScript file (ts-semver-detector.config.js)
+- JSON file (ts-semver-detector.config.json)
+- RC file (.ts-semver-detectorrc, .ts-semver-detectorrc.json, .ts-semver-detectorrc.js)
 
 Example configuration file:
 
@@ -248,11 +248,11 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '16'
-      - name: Install typeshift
-        run: npm install -g typeshift
+      - name: Install ts-semver-detector
+        run: npm install -g ts-semver-detector
       - name: Check TypeScript API changes
         run: |
-          typeshift \
+          ts-semver-detector \
             --old ${{ github.event.pull_request.base.sha }}:types/index.d.ts \
             --new ${{ github.event.pull_request.head.sha }}:types/index.d.ts \
             --format json \
@@ -264,8 +264,8 @@ jobs:
 ```yaml
 api-version-check:
   script:
-    - npm install -g typeshift
-    - typeshift \
+    - npm install -g ts-semver-detector
+    - ts-semver-detector \
         --old ${CI_MERGE_REQUEST_DIFF_BASE_SHA}:types/index.d.ts \
         --new ${CI_MERGE_REQUEST_TARGET_BRANCH_SHA}:types/index.d.ts \
         --format json \
@@ -281,8 +281,8 @@ api-version-check:
 ### Setup
 
 ```bash
-git clone https://github.com/yourusername/typeshift.git
-cd typeshift
+git clone https://github.com/yourusername/ts-semver-detector.git
+cd ts-semver-detector
 npm install
 ```
 

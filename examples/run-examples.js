@@ -57,7 +57,7 @@ function runExample(exampleName) {
     console.log(output);
   } catch (error) {
     if (error.stdout) {
-      // If there's output, show it (typeshift shows analysis even with exit code 1)
+      // If there's output, show it (ts-semver-detector shows analysis even with exit code 1)
       console.log(error.stdout);
     } else {
       console.error(colors.red + 'Error running example:' + colors.reset);

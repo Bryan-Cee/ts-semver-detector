@@ -1,6 +1,6 @@
-# TypeShift Examples
+# ts-semver-detector Examples
 
-This directory contains various examples demonstrating how to use the TypeShift (ts-semver-detector) tool.
+This directory contains various examples demonstrating how to use the ts-semver-detector tool.
 
 ## Available Examples
 
