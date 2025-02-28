@@ -3,6 +3,7 @@ import { AnalyzerConfig } from '../types';
 
 export class TypeScriptParser {
   private _program: ts.Program;
+  private _printer: ts.Printer;
 
   constructor(files: string[], options?: AnalyzerConfig) {
     const compilerOptions: ts.CompilerOptions = {
@@ -13,6 +14,7 @@ export class TypeScriptParser {
     };
 
     this._program = ts.createProgram(files, compilerOptions);
+    this._printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
   }
 
   public getRootFileNames(): string[] {
@@ -105,12 +107,59 @@ export class TypeScriptParser {
     return undefined;
   }
 
+  /**
+   * Safely gets the text of a TypeScript node.
+   * Falls back to using a printer if direct getText() fails.
+   */
+  public getNodeText(node: ts.Node): string {
+    if (!node) {
+      return '';
+    }
+
+    try {
+      // Try the direct method first
+      return node.getText().trim();
+    } catch (error) {
+      try {
+        // If direct getText fails, try to use the printer API
+        const sourceFile = node.getSourceFile();
+        if (sourceFile) {
+          return this._printer.printNode(ts.EmitHint.Unspecified, node, sourceFile).trim();
+        }
+      } catch (printError) {
+        // Silent fail and continue to fallbacks
+      }
+
+      // Special case handling based on node kind
+      if (ts.isIdentifier(node)) {
+        return node.escapedText.toString();
+      } else if (ts.isPropertySignature(node) || ts.isMethodSignature(node)) {
+        if (ts.isIdentifier(node.name)) {
+          return node.name.escapedText.toString();
+        }
+      } else if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) {
+        return node.typeName.escapedText.toString();
+      }
+
+      // Last resort
+      return `${ts.SyntaxKind[node.kind]}`;
+    }
+  }
+
   public getNodePosition(node: ts.Node): { line: number; column: number } {
-    const sourceFile = node.getSourceFile();
-    const pos = sourceFile.getLineAndCharacterOfPosition(node.getStart());
-    return {
-      line: pos.line + 1,
-      column: pos.character + 1,
-    };
+    try {
+      const sourceFile = node.getSourceFile();
+      const pos = sourceFile.getLineAndCharacterOfPosition(node.getStart());
+      return {
+        line: pos.line + 1,
+        column: pos.character + 1,
+      };
+    } catch (error) {
+      // Return a default position if we can't get the actual position
+      return {
+        line: 0,
+        column: 0,
+      };
+    }
   }
 }

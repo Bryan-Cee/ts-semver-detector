@@ -106,9 +106,20 @@ export class TypeRule extends BaseRule {
     }
 
     try {
-      return typeNode.getText().trim();
+      // Use the parser's robust method to get text
+      return this.parser.getNodeText(typeNode);
     } catch (error) {
       console.error('Error getting type node text:', error);
+      
+      // Return a generic string as last resort
+      if (ts.isUnionTypeNode(typeNode)) {
+        return 'union-type';
+      } else if (ts.isIntersectionTypeNode(typeNode)) {
+        return 'intersection-type';
+      } else if (ts.isTypeLiteralNode(typeNode)) {
+        return 'object-type';
+      }
+      
       return '';
     }
   }
