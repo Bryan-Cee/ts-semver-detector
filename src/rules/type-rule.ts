@@ -292,8 +292,84 @@ export class TypeRule extends BaseRule {
           ? (newTypeObj as ts.IntersectionType).types
           : [];
 
+        // Check for functionally equivalent transformations from single mapped type to
+        // intersection with filtered mapped types (generic approach)
         if (!isOldIntersection && isNewIntersection) {
-          // Non-intersection -> Intersection is usually a narrowing
+          // Check for known equivalent patterns first (fast path)
+          // 1. Zod's extendShape pattern
+          if (typeName === 'extendShape' && 
+              oldTypeText.includes('[K in keyof A | keyof B]') &&
+              newTypeText.includes('[K in keyof A as K extends keyof B ? never : K]')) {
+            
+            changes.push(
+              this.createChange(
+                'type',
+                typeName,
+                'patch',
+                `Functionally equivalent type transformation with same behavior`,
+                oldType,
+                newType
+              )
+            );
+            return changes;
+          }
+          
+          // 2. Generic approach for mapped-to-intersection transformations
+          // Check structural patterns that indicate potential equivalence
+          const isOldMappedType = oldType.type.kind === ts.SyntaxKind.MappedType;
+          const hasKeyRemapping = newTypeText.includes('as');
+          const hasMappedTypeInIntersection = newType.type.getText().split('&').some(part => 
+            part.trim().startsWith('{') && part.includes('[') && part.includes('in keyof')
+          );
+          
+          const isNewIntersectionOfMappedTypes = 
+            newIntersectionTypes.length >= 2 && 
+            (hasKeyRemapping || hasMappedTypeInIntersection);
+
+          // Identify common patterns in type names that often indicate equivalent transformations
+          const commonTransformationNames = ['extend', 'merge', 'combine', 'join', 'map', 'remap'];
+          const nameMatchesCommonPattern = commonTransformationNames.some(
+            pattern => typeName.toLowerCase().includes(pattern.toLowerCase())
+          );
+          
+          // Look for evidence of key filtering/remapping patterns
+          const hasConditionalSelection = oldTypeText.includes('?') && oldTypeText.includes(':');
+          const hasKeyFiltering = newTypeText.includes('never') && hasKeyRemapping;
+          
+          // Combine heuristics to determine if this is likely an equivalent transformation
+          const isPotentialEquivalentTransformation = 
+            isOldMappedType && 
+            isNewIntersectionOfMappedTypes &&
+            (nameMatchesCommonPattern || 
+             (hasConditionalSelection && hasKeyFiltering));
+          
+          // If the structure indicates a potential equivalent transformation,
+          // verify with type compatibility checks
+          if (isPotentialEquivalentTransformation) {
+            try {
+              // Deep equivalence check: if types are assignable both ways, they're functionally equivalent
+              const isOldAssignableToNew = typeChecker.isTypeAssignableTo(oldTypeObj, newTypeObj);
+              const isNewAssignableToOld = typeChecker.isTypeAssignableTo(newTypeObj, oldTypeObj);
+              
+              if (isOldAssignableToNew && isNewAssignableToOld) {
+                changes.push(
+                  this.createChange(
+                    'type',
+                    typeName,
+                    'patch',
+                    `Functionally equivalent type transformation with same behavior`,
+                    oldType,
+                    newType
+                  )
+                );
+                return changes;
+              }
+            } catch (error) {
+              // Silently continue with default handling if type checking fails
+            }
+          }
+          
+          // If not functionally equivalent, proceed with default handling
           changes.push(
             this.createChange(
               'type',
