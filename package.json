@@ -11,11 +11,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Bryan-Cee/typeshift.git"
+    "url": "git+https://github.com/Bryan-Cee/ts-semver-detector.git"
   },
-  "homepage": "https://github.com/Bryan-Cee/typeshift#readme",
+  "homepage": "https://github.com/Bryan-Cee/ts-semver-detector#readme",
   "bugs": {
-    "url": "https://github.com/Bryan-Cee/typeshift/issues"
+    "url": "https://github.com/Bryan-Cee/ts-semver-detector/issues"
   },
   "publishConfig": {
     "access": "public"
