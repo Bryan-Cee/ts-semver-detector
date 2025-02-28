@@ -31,7 +31,9 @@
     "postversion": "git push && git push --tags",
     "release:patch": "npm version patch",
     "release:minor": "npm version minor",
-    "release:major": "npm version major"
+    "release:major": "npm version major",
+    "examples": "node examples/run-examples.js",
+    "example": "node examples/run-examples.js"
   },
   "keywords": [
     "typescript",
