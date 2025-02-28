@@ -1,10 +1,10 @@
 {
-  "name": "ts-semver",
+  "name": "ts-semver-detector",
   "version": "0.2.1",
   "description": "A CLI tool to analyze changes between TypeScript definition files and determine semantic version increments",
   "main": "dist/index.js",
   "bin": {
-    "ts-semver": "./dist/cli/index.js"
+    "ts-semver-detector": "./dist/cli/index.js"
   },
   "files": [
     "dist/**/*"
