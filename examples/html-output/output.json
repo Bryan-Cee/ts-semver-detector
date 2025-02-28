@@ -1,0 +1,123 @@
+{
+  "changes": [
+    {
+      "type": "interface",
+      "name": "User.avatar",
+      "change": "interface",
+      "severity": "minor",
+      "description": "Added optional property 'avatar'",
+      "location": {
+        "newFile": {
+          "line": 14,
+          "column": 3
+        }
+      },
+      "typeInfo": {
+        "hasOldType": false,
+        "hasNewType": true,
+        "newTypeSummary": "// User interface definition - v2..."
+      }
+    },
+    {
+      "type": "interface",
+      "name": "User.preferences",
+      "change": "interface",
+      "severity": "major",
+      "description": "Added required property 'preferences'",
+      "location": {
+        "newFile": {
+          "line": 16,
+          "column": 3
+        }
+      },
+      "typeInfo": {
+        "hasOldType": false,
+        "hasNewType": true,
+        "newTypeSummary": "// User interface definition - v2..."
+      }
+    },
+    {
+      "type": "type",
+      "name": "AuthMethod",
+      "change": "type",
+      "severity": "major",
+      "description": "Removed type option from union type 'AuthMethod'",
+      "location": {
+        "oldFile": {
+          "line": 16,
+          "column": 1
+        },
+        "newFile": {
+          "line": 23,
+          "column": 1
+        }
+      },
+      "typeInfo": {
+        "hasOldType": true,
+        "hasNewType": true,
+        "oldTypeSummary": "// Authentication related types...",
+        "newTypeSummary": "// Authentication related types..."
+      }
+    },
+    {
+      "type": "interface",
+      "name": "AuthResult.refreshToken",
+      "change": "interface",
+      "severity": "major",
+      "description": "Added required property 'refreshToken'",
+      "location": {
+        "newFile": {
+          "line": 33,
+          "column": 3
+        }
+      },
+      "typeInfo": {
+        "hasOldType": false,
+        "hasNewType": true,
+        "newTypeSummary": "export interface AuthResult {..."
+      }
+    },
+    {
+      "type": "interface",
+      "name": "ApiResponse.meta",
+      "change": "interface",
+      "severity": "minor",
+      "description": "Added optional property 'meta'",
+      "location": {
+        "newFile": {
+          "line": 45,
+          "column": 3
+        }
+      },
+      "typeInfo": {
+        "hasOldType": false,
+        "hasNewType": true,
+        "newTypeSummary": "// API response types..."
+      }
+    },
+    {
+      "type": "interface",
+      "change": "interface",
+      "name": "Pagination",
+      "severity": "minor",
+      "description": "Added Pagination",
+      "location": {
+        "newFile": {
+          "line": 54,
+          "column": 1
+        }
+      },
+      "typeInfo": {
+        "hasOldType": false,
+        "hasNewType": false
+      }
+    }
+  ],
+  "summary": {
+    "totalChanges": 6,
+    "majorChanges": 3,
+    "minorChanges": 3,
+    "patchChanges": 0
+  },
+  "recommendedVersionBump": "major"
+}

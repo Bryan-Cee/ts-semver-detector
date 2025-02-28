@@ -37,6 +37,8 @@ export interface Change {
     newFile?: ChangeLocation;
   };
   details?: Record<string, unknown>;
+  oldType?: string;
+  newType?: string;
 }
 
 export interface AnalysisResult {

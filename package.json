@@ -32,7 +32,6 @@
     "release:patch": "npm version patch",
     "release:minor": "npm version minor",
     "release:major": "npm version major",
-    "examples": "node examples/run-examples.js",
     "example": "node examples/run-examples.js"
   },
   "keywords": [
@@ -49,9 +48,11 @@
     "chalk": "^4.1.2",
     "commander": "^11.0.0",
     "cosmiconfig": "^9.0.0",
-    "typescript": "^5.0.0"
+    "diff": "^5.2.0",
+    "typescript": "^5.0.4"
   },
   "devDependencies": {
+    "@types/diff": "^7.0.1",
     "@types/jest": "^29.0.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
