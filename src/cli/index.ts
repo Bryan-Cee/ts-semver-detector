@@ -7,6 +7,7 @@ import * as fs from 'fs';
 // Only needed for HTML output formatting
 import * as diff from 'diff';
 import { TypeScriptDiffAnalyzer } from '../diff/analyzer';
+import { TypeScriptParser } from '../parser/parser';
 import { AnalysisResult, Change, Severity, ChangeType, ChangeLocation } from '../types';
 import { ConfigLoader } from '../config/config-loader';
 
@@ -505,12 +506,23 @@ async function main() {
         options.treatUndefinedAsAny ?? config.treatUndefinedAsAny,
     };
 
+    // Create parser to get source files
+    const parser = new TypeScriptParser([oldFile, newFile], analyzerOptions);
+    const oldSourceFile = parser.getSourceFile(oldFile);
+    const newSourceFile = parser.getSourceFile(newFile);
+    
+    if (!oldSourceFile || !newSourceFile) {
+      throw new Error('Could not find source files');
+    }
+    
+    // Create analyzer with parser
     const analyzer = new TypeScriptDiffAnalyzer(
-      oldFile,
-      newFile,
+      parser,
       analyzerOptions
     );
-    const result = analyzer.analyze();
+    
+    // Call analyze with source files
+    const result = analyzer.analyze(oldSourceFile, newSourceFile);
 
     const output = formatOutput(result, {
       format: options.format as string || 'text',
