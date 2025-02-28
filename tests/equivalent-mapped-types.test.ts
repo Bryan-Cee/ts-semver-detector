@@ -1,6 +1,8 @@
 import * as path from 'path';
+import * as ts from 'typescript';
 import { TypeScriptDiffAnalyzer } from '../src/diff/analyzer';
 import { Change } from '../src/types';
+import { TypeScriptParser } from '../src/parser/parser';
 
 /**
  * Helper function to find a change by type and name
@@ -20,13 +22,19 @@ describe('Equivalent Type Transformations', () => {
     const oldFile = path.resolve(__dirname, 'fixtures/zod-extendshape-old.d.ts');
     const newFile = path.resolve(__dirname, 'fixtures/zod-extendshape-new.d.ts');
     let analyzer: TypeScriptDiffAnalyzer;
+    let parser: TypeScriptParser;
+    let oldSourceFile: ts.SourceFile;
+    let newSourceFile: ts.SourceFile;
 
     beforeEach(() => {
-      analyzer = new TypeScriptDiffAnalyzer(oldFile, newFile);
+      parser = new TypeScriptParser([oldFile, newFile]);
+      analyzer = new TypeScriptDiffAnalyzer(parser);
+      oldSourceFile = parser.getSourceFile(oldFile)!;
+      newSourceFile = parser.getSourceFile(newFile)!;
     });
 
     it('should detect functionally equivalent transformations as PATCH changes', () => {
-      const result = analyzer.analyze();
+      const result = analyzer.analyze(oldSourceFile, newSourceFile);
       
       // Debug output
       console.log('All detected changes:');
@@ -46,7 +54,7 @@ describe('Equivalent Type Transformations', () => {
     });
     
     it('should specifically handle the zod.extendShape case correctly', () => {
-      const result = analyzer.analyze();
+      const result = analyzer.analyze(oldSourceFile, newSourceFile);
       
       // Check for specific pattern in the changes
       const change = findChange(result.changes, 'type', 'extendShape');
