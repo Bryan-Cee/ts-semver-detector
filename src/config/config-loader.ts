@@ -2,11 +2,11 @@ import { cosmiconfig } from 'cosmiconfig';
 import { AnalyzerConfig } from '../types';
 
 const CONFIG_FILE_NAMES = [
-  'typeshift.config.js',
-  'typeshift.config.json',
-  '.typeshiftrc',
-  '.typeshiftrc.json',
-  '.typeshiftrc.js',
+  'ts-semver-detector.config.js',
+  'ts-semver-detector.config.json',
+  '.ts-semver-detector',
+  '.ts-semver-detector.json',
+  '.ts-semver-detector.js',
 ];
 
 const DEFAULT_CONFIG: AnalyzerConfig = {
@@ -24,7 +24,7 @@ export class ConfigLoader {
   private explorer: ReturnType<typeof cosmiconfig>;
 
   private constructor() {
-    this.explorer = cosmiconfig('typeshift', {
+    this.explorer = cosmiconfig('ts-semver-detector', {
       searchPlaces: CONFIG_FILE_NAMES,
       transform: (result) => {
         if (result === null) {

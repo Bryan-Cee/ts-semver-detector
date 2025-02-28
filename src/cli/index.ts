@@ -14,7 +14,7 @@ import { ConfigLoader } from '../config/config-loader';
 const program = new Command();
 
 program
-  .name('typeshift')
+  .name('ts-semver-detector')
   .description('Analyze changes between TypeScript definition files')
   .version('1.0.0')
   .requiredOption('--old <file>', 'Path to the old .d.ts file')

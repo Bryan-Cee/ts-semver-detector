@@ -1,11 +1,11 @@
-# Contributing to Typeshift
+# Contributing to ts-semver-detector
 
-Thank you for considering contributing to Typeshift!
+Thank you for considering contributing to ts-semver-detector!
 
 ## Development Setup
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/Bryan-Cee/typeshift.git`
+2. Clone your fork: `git clone https://github.com/Bryan-Cee/ts-semver-detector.git`
 3. Install dependencies: `npm install`
 4. Run tests: `npm test`
 
