@@ -12,6 +12,7 @@ import { InterfaceRule } from '../rules/interface-rule';
 import { TypeRule } from '../rules/type-rule';
 import { FunctionRule } from '../rules/function-rule';
 import { ClassRule } from '../rules/class-rule';
+import { TypeInterfaceConversionRule } from '../rules/type-interface-conversion-rule';
 
 export class TypeScriptDiffAnalyzer {
   private parser: TypeScriptParser;
@@ -28,6 +29,7 @@ export class TypeScriptDiffAnalyzer {
 
   private initializeRules() {
     this.rules = [
+      new TypeInterfaceConversionRule(this.parser),
       new InterfaceRule(this.parser),
       new TypeRule(this.parser),
       new FunctionRule(this.parser),
