@@ -291,34 +291,47 @@ export class InterfaceRule extends BaseRule {
       // Check if type changed for property signatures
       if (ts.isPropertySignature(oldMember) && ts.isPropertySignature(newMember)) {
         if (oldMember.type && newMember.type) {
-          const oldTypeText = oldMember.type.getText().trim();
-          const newTypeText = newMember.type.getText().trim();
+          try {
+            const oldTypeText = this.parser.getNodeText(oldMember.type);
+            const newTypeText = this.parser.getNodeText(newMember.type);
 
-          if (oldTypeText !== newTypeText) {
-            // Special case handling for {} to unknown conversions
-            if (this.isEmptyObjectToUnknownChange(oldTypeText, newTypeText) || 
-                this.isNonBreakingTypeChange(oldTypeText, newTypeText)) {
+            if (oldTypeText !== newTypeText) {
+              // Special case handling for {} to unknown conversions
+              if (this.isEmptyObjectToUnknownChange(oldTypeText, newTypeText) || 
+                  this.isNonBreakingTypeChange(oldTypeText, newTypeText)) {
+                return {
+                  hasChanged: true,
+                  severity: 'patch',
+                  description: 'Refined property type (non-breaking):',
+                  details: {
+                    typeChanged: true,
+                    oldType: oldTypeText,
+                    newType: newTypeText,
+                    nonBreaking: true
+                  },
+                };
+              }
+              
               return {
                 hasChanged: true,
-                severity: 'patch',
-                description: 'Refined property type (non-breaking):',
+                severity: 'major',
+                description: 'Changed property type:',
                 details: {
                   typeChanged: true,
                   oldType: oldTypeText,
                   newType: newTypeText,
-                  nonBreaking: true
                 },
               };
             }
-            
+          } catch (error) {
+            console.error('Error comparing property types:', error);
+            // If we can't reliably compare, be conservative
             return {
               hasChanged: true,
               severity: 'major',
-              description: 'Changed property type:',
+              description: 'Unable to properly compare property types:',
               details: {
-                typeChanged: true,
-                oldType: oldTypeText,
-                newType: newTypeText,
+                error: error instanceof Error ? error.message : String(error),
               },
             };
           }
@@ -652,17 +665,23 @@ export class InterfaceRule extends BaseRule {
       if (!extendsClause) return [];
 
       return extendsClause.types.map(t => {
-        // Extract the base name without type parameters
-        const fullText = t.getText();
-        let name = fullText;
-        
-        // Get base name (without type parameters)
-        const typeParamsStart = fullText.indexOf('<');
-        if (typeParamsStart > 0) {
-          name = fullText.substring(0, typeParamsStart).trim();
+        try {
+          // Extract the base name without type parameters
+          const fullText = this.parser.getNodeText(t);
+          let name = fullText;
+          
+          // Get base name (without type parameters)
+          const typeParamsStart = fullText.indexOf('<');
+          if (typeParamsStart > 0) {
+            name = fullText.substring(0, typeParamsStart).trim();
+          }
+          
+          return { name, text: fullText };
+        } catch (error) {
+          console.error('Error getting extended interface text:', error);
+          // Return a placeholder name to avoid breaking the analysis
+          return { name: 'unknown', text: 'unknown' };
         }
-        
-        return { name, text: fullText };
       });
     } catch (error) {
       console.error('Error getting extended interfaces:', error);
@@ -705,62 +724,99 @@ export class InterfaceRule extends BaseRule {
     oldMethod: ts.MethodSignature,
     newMethod: ts.MethodSignature
   ): boolean {
-    const oldParams = oldMethod.parameters || [];
-    const newParams = newMethod.parameters || [];
+    try {
+      const oldParams = oldMethod.parameters || [];
+      const newParams = newMethod.parameters || [];
 
-    // Check parameter count
-    if (oldParams.length !== newParams.length) {
+      // Check parameter count
+      if (oldParams.length !== newParams.length) {
+        return true;
+      }
+
+      // Check each parameter
+      for (let i = 0; i < oldParams.length; i++) {
+        const oldParam = oldParams[i];
+        const newParam = newParams[i];
+
+        try {
+          // Check parameter name
+          const oldParamName = this.parser.getNodeText(oldParam.name);
+          const newParamName = this.parser.getNodeText(newParam.name);
+          
+          if (oldParamName !== newParamName) {
+            return true;
+          }
+
+          // Check parameter type
+          if (
+            (oldParam.type && !newParam.type) ||
+            (!oldParam.type && newParam.type)
+          ) {
+            return true;
+          }
+          
+          if (oldParam.type && newParam.type) {
+            const oldTypeText = this.parser.getNodeText(oldParam.type);
+            const newTypeText = this.parser.getNodeText(newParam.type);
+            
+            if (oldTypeText !== newTypeText) {
+              // Special case for UnknownIfNonSpecific
+              if (this.isNonBreakingTypeChange(oldTypeText, newTypeText) ||
+                  this.isEmptyObjectToUnknownChange(oldTypeText, newTypeText)) {
+                continue; // This is a non-breaking change
+              }
+              
+              return true;
+            }
+          }
+        } catch (error) {
+          console.error('Error comparing parameter:', error);
+          // If we can't reliably compare, assume they're different to be safe
+          return true;
+        }
+
+        // Check if optional status changed
+        if (!!oldParam.questionToken !== !!newParam.questionToken) {
+          return true;
+        }
+
+        // Check if dot dot dot token changed
+        if (!!oldParam.dotDotDotToken !== !!newParam.dotDotDotToken) {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error comparing parameters:', error);
+      // If we can't reliably compare, assume they're different to be safe
       return true;
     }
-
-    // Check each parameter
-    for (let i = 0; i < oldParams.length; i++) {
-      const oldParam = oldParams[i];
-      const newParam = newParams[i];
-
-      // Check parameter name
-      if (oldParam.name.getText() !== newParam.name.getText()) {
-        return true;
-      }
-
-      // Check parameter type
-      if (
-        (oldParam.type && !newParam.type) ||
-        (!oldParam.type && newParam.type) ||
-        (oldParam.type && newParam.type && oldParam.type.getText() !== newParam.type.getText())
-      ) {
-        // Special case for UnknownIfNonSpecific
-        const oldTypeText = oldParam.type ? oldParam.type.getText() : '';
-        const newTypeText = newParam.type ? newParam.type.getText() : '';
-        
-        if (this.isNonBreakingTypeChange(oldTypeText, newTypeText) ||
-            this.isEmptyObjectToUnknownChange(oldTypeText, newTypeText)) {
-          continue; // This is a non-breaking change
-        }
-        
-        return true;
-      }
-
-      // Check if optional status changed
-      if (!!oldParam.questionToken !== !!newParam.questionToken) {
-        return true;
-      }
-
-      // Check if dot dot dot token changed
-      if (!!oldParam.dotDotDotToken !== !!newParam.dotDotDotToken) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   private getParametersText(method: ts.MethodSignature): string {
-    return method.parameters.map(p => p.getText()).join(', ');
+    try {
+      return method.parameters.map(p => {
+        try {
+          return this.parser.getNodeText(p);
+        } catch (error) {
+          console.error('Error getting parameter text:', error);
+          return 'unknown';
+        }
+      }).join(', ');
+    } catch (error) {
+      console.error('Error getting parameters text:', error);
+      return 'unknown';
+    }
   }
 
   private getReturnTypeText(method: ts.MethodSignature): string {
-    return method.type ? method.type.getText() : 'any';
+    try {
+      return method.type ? this.parser.getNodeText(method.type) : 'any';
+    } catch (error) {
+      console.error('Error getting return type text:', error);
+      return 'unknown';
+    }
   }
 
   protected getNodeName(node: ts.Node): string {
