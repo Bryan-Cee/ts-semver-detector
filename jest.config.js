@@ -8,9 +8,9 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov'],
   coveragePathIgnorePatterns: ['/node_modules/', '/tests/'],
-  globals: {
-    'ts-jest': {
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: 'tsconfig.json',
-    },
+    }],
   },
 };
