@@ -13,71 +13,11 @@ describe('TypeScriptDiffAnalyzer', () => {
     let oldSourceFile: ts.SourceFile;
     let newSourceFile: ts.SourceFile;
     
-    // Add mock changes for testing
-    const mockChanges: Change[] = [
-      {
-        type: 'interface',
-        name: 'User.age',
-        change: 'added-property',
-        severity: 'minor',
-        description: 'Added optional property \'age\'',
-        location: { oldFile: { line: 1, column: 1 }, newFile: { line: 5, column: 2 } }
-      },
-      {
-        type: 'interface',
-        name: 'UserSettings.language',
-        change: 'added-property',
-        severity: 'major',
-        description: 'Added required property \'language\'',
-        location: { oldFile: { line: 7, column: 1 }, newFile: { line: 10, column: 2 } }
-      },
-      {
-        type: 'type',
-        name: 'UserId',
-        change: 'type-narrowing',
-        severity: 'major',
-        description: 'Narrowed type from \'string | number\' to \'string\'',
-        location: { oldFile: { line: 12, column: 1 }, newFile: { line: 14, column: 1 } }
-      },
-      {
-        type: 'function',
-        name: 'createUser',
-        change: 'added-parameter',
-        severity: 'minor',
-        description: 'Added optional parameter options',
-        location: { oldFile: { line: 14, column: 1 }, newFile: { line: 16, column: 1 } }
-      },
-      {
-        type: 'class',
-        name: 'UserManager.getUser',
-        change: 'return-type-change',
-        severity: 'major',
-        description: 'Changed return type from User to Promise<User>',
-        location: { oldFile: { line: 16, column: 1 }, newFile: { line: 21, column: 1 } }
-      }
-    ];
-    
     beforeEach(() => {
       parser = new TypeScriptParser([oldFile, newFile]);
       analyzer = new TypeScriptDiffAnalyzer(parser);
       oldSourceFile = parser.getSourceFile(oldFile)!;
       newSourceFile = parser.getSourceFile(newFile)!;
-      
-      // Mock the analyze method to return our test data
-      jest.spyOn(analyzer, 'analyze').mockImplementation(() => {
-        return {
-          oldFile,
-          newFile,
-          changes: mockChanges,
-          recommendedVersionBump: 'major',
-          summary: {
-            totalChanges: mockChanges.length,
-            majorChanges: mockChanges.filter(c => c.severity === 'major').length,
-            minorChanges: mockChanges.filter(c => c.severity === 'minor').length,
-            patchChanges: mockChanges.filter(c => c.severity === 'patch').length
-          }
-        };
-      });
     });
 
     it('should detect the correct version bump', () => {
@@ -149,111 +89,12 @@ describe('TypeScriptDiffAnalyzer', () => {
     let oldSourceFile: ts.SourceFile;
     let newSourceFile: ts.SourceFile;
     
-    // Mock complex changes for complex fixtures
-    const mockComplexChanges: Change[] = [
-      {
-        type: 'type',
-        name: 'Container',
-        change: 'added-constraint',
-        severity: 'major',
-        description: 'Added constraint to type parameter',
-        location: { oldFile: { line: 1, column: 1 }, newFile: { line: 1, column: 1 } }
-      },
-      {
-        type: 'type',
-        name: 'Container.tags',
-        change: 'added-field',
-        severity: 'minor',
-        description: 'Added optional field tags',
-        location: { oldFile: { line: 2, column: 1 }, newFile: { line: 2, column: 1 } }
-      },
-      {
-        type: 'type',
-        name: 'Status.archived',
-        change: 'added-union-member',
-        severity: 'minor',
-        description: 'Added new type option \'archived\' to \'Status\'',
-        location: { oldFile: { line: 5, column: 1 }, newFile: { line: 5, column: 1 } }
-      },
-      {
-        type: 'type',
-        name: 'WithTimestamp.timezone',
-        change: 'added-field',
-        severity: 'minor',
-        description: 'Added optional field timezone to intersection type',
-        location: { oldFile: { line: 7, column: 1 }, newFile: { line: 7, column: 1 } }
-      },
-      {
-        type: 'type',
-        name: 'IsString',
-        change: 'broadened-condition',
-        severity: 'minor',
-        description: 'Broadened condition in conditional type',
-        location: { oldFile: { line: 10, column: 1 }, newFile: { line: 10, column: 1 } }
-      },
-      {
-        type: 'type',
-        name: 'UnwrapPromise',
-        change: 'changed-default',
-        severity: 'major',
-        description: 'Changed default value of type parameter',
-        location: { oldFile: { line: 12, column: 1 }, newFile: { line: 12, column: 1 } }
-      },
-      {
-        type: 'interface',
-        name: 'Repository.findMany',
-        change: 'added-method',
-        severity: 'minor',
-        description: 'Added method findMany',
-        location: { oldFile: { line: 15, column: 1 }, newFile: { line: 15, column: 1 } }
-      },
-      {
-        type: 'interface',
-        name: 'Repository.restore',
-        change: 'added-method',
-        severity: 'minor',
-        description: 'Added method restore',
-        location: { oldFile: { line: 16, column: 1 }, newFile: { line: 16, column: 1 } }
-      },
-      {
-        type: 'type',
-        name: 'HttpMethod.PATCH',
-        change: 'added-union-member',
-        severity: 'minor',
-        description: 'Added new type option \'PATCH\' to \'HttpMethod\'',
-        location: { oldFile: { line: 20, column: 1 }, newFile: { line: 20, column: 1 } }
-      },
-      {
-        type: 'type',
-        name: 'ApiEndpoint.{id}',
-        change: 'added-pattern',
-        severity: 'minor',
-        description: 'Added new pattern \'{id}\' to template literal type',
-        location: { oldFile: { line: 25, column: 1 }, newFile: { line: 25, column: 1 } }
-      },
-    ];
 
     beforeEach(() => {
       parser = new TypeScriptParser([oldFile, newFile]);
       analyzer = new TypeScriptDiffAnalyzer(parser);
       oldSourceFile = parser.getSourceFile(oldFile)!;
       newSourceFile = parser.getSourceFile(newFile)!;
-      
-      // Mock the analyze method for complex changes
-      jest.spyOn(analyzer, 'analyze').mockImplementation(() => {
-        return {
-          oldFile,
-          newFile,
-          changes: mockComplexChanges,
-          recommendedVersionBump: 'major',
-          summary: {
-            totalChanges: mockComplexChanges.length,
-            majorChanges: mockComplexChanges.filter(c => c.severity === 'major').length,
-            minorChanges: mockComplexChanges.filter(c => c.severity === 'minor').length,
-            patchChanges: mockComplexChanges.filter(c => c.severity === 'patch').length
-          }
-        };
-      });
     });
 
     describe('Generic Types', () => {
@@ -370,43 +211,6 @@ describe('TypeScriptDiffAnalyzer', () => {
     const analyzer = new TypeScriptDiffAnalyzer(parser);
     const oldSourceFile = parser.getSourceFile(oldFile)!;
     const newSourceFile = parser.getSourceFile(newFile)!;
-    
-    // Create local mock changes
-    const localMockChanges: Change[] = [
-      {
-        type: 'interface',
-        name: 'User.age',
-        change: 'added-property',
-        severity: 'minor',
-        description: 'Added optional property \'age\'',
-        location: { oldFile: { line: 1, column: 1 }, newFile: { line: 5, column: 2 } }
-      },
-      {
-        type: 'interface',
-        name: 'UserSettings.language',
-        change: 'added-property',
-        severity: 'major',
-        description: 'Added required property \'language\'',
-        location: { oldFile: { line: 7, column: 1 }, newFile: { line: 10, column: 2 } }
-      }
-    ];
-    
-    // Mock the analyze method to return our test data with location information
-    jest.spyOn(analyzer, 'analyze').mockImplementation(() => {
-      return {
-        oldFile,
-        newFile,
-        changes: [...localMockChanges],
-        recommendedVersionBump: 'major',
-        summary: {
-          totalChanges: localMockChanges.length,
-          majorChanges: localMockChanges.filter(c => c.severity === 'major').length,
-          minorChanges: localMockChanges.filter(c => c.severity === 'minor').length,
-          patchChanges: localMockChanges.filter(c => c.severity === 'patch').length
-        }
-      };
-    });
-    
     const result = analyzer.analyze(oldSourceFile, newSourceFile);
     const changes = result.changes;
 

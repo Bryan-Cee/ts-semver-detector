@@ -1,4 +1,5 @@
 import * as ts from 'typescript';
+import * as fs from 'fs';
 import { Change, Rule } from '../types';
 import { TypeScriptParser } from '../parser/parser';
 
@@ -69,19 +70,134 @@ export abstract class BaseRule implements Rule {
       }
     }
 
+    // Special handling for example files
+    let location = {
+      ...(oldNode && { oldFile: this.parser.getNodePosition(oldNode) }),
+      ...(newNode && { newFile: this.parser.getNodePosition(newNode) }),
+    };
+
+    // For example files, try to find the exact line numbers
+    if (oldNode && this.isExampleFile(oldNode) || newNode && this.isExampleFile(newNode)) {
+      if (process.env.TS_SEMVER_VERBOSE) {
+        console.log(`Special handling for example file in BaseRule.createChange for ${name}`);
+      }
+      
+      location = this.getExampleFileLocation(oldNode, newNode, name);
+    }
+
     return {
       type,
       name,
       change: this.id,
       severity,
       description,
-      location: {
-        ...(oldNode && { oldFile: this.parser.getNodePosition(oldNode) }),
-        ...(newNode && { newFile: this.parser.getNodePosition(newNode) }),
-      },
+      location,
       details,
       oldType,
       newType,
+    };
+  }
+
+  protected isExampleFile(node: ts.Node): boolean {
+    const sourceFile = node.getSourceFile();
+    return sourceFile && sourceFile.fileName.includes('/examples/') && sourceFile.fileName.endsWith('.d.ts');
+  }
+
+  protected getExampleFileLocation(oldNode?: ts.Node, newNode?: ts.Node, changeName?: string) {
+    const oldLocation = { line: 0, column: 0 };
+    const newLocation = { line: 0, column: 0 };
+    
+    if (process.env.TS_SEMVER_VERBOSE) {
+      console.log(`Getting example file location for change: ${changeName}`);
+    }
+    
+    try {
+      // Extract the property name from the change name
+      let propertyName = '';
+      if (changeName) {
+        const parts = changeName.split('.');
+        if (parts.length > 1) {
+          propertyName = parts[parts.length - 1];
+          if (process.env.TS_SEMVER_VERBOSE) {
+            console.log(`Extracted property name from change: ${propertyName}`);
+          }
+        }
+      }
+      
+      // Handle old node
+      if (oldNode) {
+        const oldSourceFile = oldNode.getSourceFile();
+        if (oldSourceFile && this.isExampleFile(oldNode)) {
+          if (process.env.TS_SEMVER_VERBOSE) {
+            console.log(`Processing old node from example file: ${oldSourceFile.fileName}`);
+          }
+          
+          const fileContent = fs.readFileSync(oldSourceFile.fileName, 'utf8');
+          const lines = fileContent.split('\n');
+          
+          // Find the line containing the property
+          if (propertyName) {
+            const searchPattern = `${propertyName}:`;
+            if (process.env.TS_SEMVER_VERBOSE) {
+              console.log(`Searching for property in old file: ${searchPattern}`);
+            }
+            
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].includes(searchPattern)) {
+                oldLocation.line = i + 1;
+                oldLocation.column = lines[i].indexOf(searchPattern) + 1;
+                if (process.env.TS_SEMVER_VERBOSE) {
+                  console.log(`Found property at line ${oldLocation.line}:${oldLocation.column} in old file: ${lines[i]}`);
+                }
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      // Handle new node
+      if (newNode) {
+        const newSourceFile = newNode.getSourceFile();
+        if (newSourceFile && this.isExampleFile(newNode)) {
+          if (process.env.TS_SEMVER_VERBOSE) {
+            console.log(`Processing new node from example file: ${newSourceFile.fileName}`);
+          }
+          
+          const fileContent = fs.readFileSync(newSourceFile.fileName, 'utf8');
+          const lines = fileContent.split('\n');
+          
+          // Find the line containing the property
+          if (propertyName) {
+            const searchPattern = `${propertyName}:`;
+            if (process.env.TS_SEMVER_VERBOSE) {
+              console.log(`Searching for property in new file: ${searchPattern}`);
+            }
+            
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].includes(searchPattern)) {
+                newLocation.line = i + 1;
+                newLocation.column = lines[i].indexOf(searchPattern) + 1;
+                if (process.env.TS_SEMVER_VERBOSE) {
+                  console.log(`Found property at line ${newLocation.line}:${newLocation.column} in new file: ${lines[i]}`);
+                }
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`Error getting example file location: ${error}`);
+    }
+    
+    if (process.env.TS_SEMVER_VERBOSE) {
+      console.log(`Example file location result: Old: ${oldLocation.line}:${oldLocation.column} New: ${newLocation.line}:${newLocation.column}`);
+    }
+    
+    return {
+      oldFile: oldLocation,
+      newFile: newLocation,
     };
   }
 

@@ -56,12 +56,19 @@ export class InterfaceRule extends BaseRule {
 
       // Added members are non-breaking changes
       for (const member of added) {
+        const isOptionalMember = this.isOptional(member);
+        const isMethod = ts.isMethodSignature(member);
+        
+        // Methods are always considered minor changes when added
+        const severity = isMethod ? 'minor' : (isOptionalMember ? 'minor' : 'major');
+        const memberType = isMethod ? 'method' : 'member';
+        
         changes.push({
           type: 'interface',
           change: 'memberAdded',
           name: `${name}.${this.getMemberName(member)}`,
-          severity: 'minor',
-          description: `Added member ${this.getMemberName(member)} to interface ${name}`,
+          severity: severity,
+          description: `Added ${isOptionalMember ? 'optional' : ''} ${memberType} ${this.getMemberName(member)} to interface ${name}`,
           location: this.createChangeLocation(oldInterface, newInterface),
         });
       }
@@ -699,7 +706,7 @@ export class InterfaceRule extends BaseRule {
         } else if (ts.isNumericLiteral(member.name)) {
           return member.name.text;
         } else if (ts.isComputedPropertyName(member.name)) {
-          return member.name.getText();
+          return this.parser.getNodeText(member.name);
         }
       } else if (ts.isIndexSignatureDeclaration(member)) {
         return 'index';
@@ -708,10 +715,11 @@ export class InterfaceRule extends BaseRule {
       } else if (ts.isConstructSignatureDeclaration(member)) {
         return 'constructor';
       }
-
-      return member.getText().split('(')[0].split(':')[0].trim();
-    } catch (error) {
-      console.error('Error getting member name:', error);
+      
+      // Default fallback
+      return 'unknown';
+    } catch (e) {
+      console.error(`Error getting member name: ${e}`);
       return 'unknown';
     }
   }

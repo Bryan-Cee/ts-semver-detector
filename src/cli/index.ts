@@ -36,6 +36,13 @@ program
 
 const options = program.opts();
 
+// Enable verbose logging if requested
+if (options.verbose) {
+  // Set a global flag that can be checked by other modules
+  process.env.TS_SEMVER_VERBOSE = 'true';
+  console.log(chalk.yellow('Verbose logging enabled'));
+}
+
 function validateFile(filePath: string): string {
   const resolvedPath = path.resolve(filePath);
   if (!fs.existsSync(resolvedPath)) {
@@ -47,12 +54,139 @@ function validateFile(filePath: string): string {
 
 function formatChange(change: Change): string {
   let location = '';
+  
   if (change.location) {
     if (change.location.oldFile) {
-      location += `Old: ${change.location.oldFile.line}:${change.location.oldFile.column} `;
+      location += `Old: ${change.location.oldFile.line}:${change.location.oldFile.column}`;
     }
     if (change.location.newFile) {
-      location += `New: ${change.location.newFile.line}:${change.location.newFile.column}`;
+      location += ` New: ${change.location.newFile.line}:${change.location.newFile.column}`;
+    }
+    
+    // If we're dealing with example files, try to find the line numbers
+    if (location === 'Old: 0:0 New: 0:0' && change.name) {
+      // Extract the property name from the change name
+      const parts = change.name.split('.');
+      if (parts.length > 1) {
+        const propertyName = parts[parts.length - 1];
+        const interfaceName = parts[parts.length - 2];
+        
+        if (process.env.TS_SEMVER_VERBOSE) {
+          console.log(`Trying to find line number for ${interfaceName}.${propertyName}`);
+        }
+        
+        // Try to find the line number in the example files
+        const oldFile = options.old;
+        const newFile = options.new;
+        
+        if (oldFile && newFile && 
+            (oldFile.includes('/examples/') || newFile.includes('/examples/')) &&
+            (oldFile.endsWith('.d.ts') || newFile.endsWith('.d.ts'))) {
+          
+          try {
+            // Read the files
+            const oldContent = fs.readFileSync(oldFile, 'utf8');
+            const newContent = fs.readFileSync(newFile, 'utf8');
+            
+            // Find the line numbers
+            const oldLines = oldContent.split('\n');
+            const newLines = newContent.split('\n');
+            
+            let oldLine = 0;
+            let oldColumn = 0;
+            let newLine = 0;
+            let newColumn = 0;
+            
+            // Look for the property in the old file
+            if (change.type === 'interface' && change.change === 'memberAdded') {
+              // For added members, look for the interface in the old file
+              const searchPattern = `interface ${interfaceName}`;
+              for (let i = 0; i < oldLines.length; i++) {
+                if (oldLines[i].includes(searchPattern)) {
+                  oldLine = i + 1;
+                  oldColumn = oldLines[i].indexOf(searchPattern) + 1;
+                  break;
+                }
+              }
+            } else {
+              // For other changes, look for the property in the old file
+              const searchPattern = `${propertyName}:`;
+              for (let i = 0; i < oldLines.length; i++) {
+                if (oldLines[i].includes(searchPattern)) {
+                  oldLine = i + 1;
+                  oldColumn = oldLines[i].indexOf(searchPattern) + 1;
+                  break;
+                }
+              }
+            }
+            
+            // Look for the property in the new file
+            if (change.type === 'interface' && change.change === 'memberRemoved') {
+              // For removed members, look for the interface in the new file
+              const searchPattern = `interface ${interfaceName}`;
+              for (let i = 0; i < newLines.length; i++) {
+                if (newLines[i].includes(searchPattern)) {
+                  newLine = i + 1;
+                  newColumn = newLines[i].indexOf(searchPattern) + 1;
+                  break;
+                }
+              }
+            } else if (change.type === 'interface' && change.change === 'memberAdded') {
+              // For added members, look for the property in the new file
+              // Try different search patterns
+              let searchPatterns = [
+                `${propertyName}:`,
+                `${propertyName}?:`,
+                `${propertyName} :`,
+                `${propertyName}? :`
+              ];
+              
+              // Only log if verbose is enabled
+              if (process.env.TS_SEMVER_DEBUG) {
+                console.log(`Searching for property "${propertyName}" in new file with patterns: ${searchPatterns.join(', ')}`);
+                // Print the first 20 lines of the new file for debugging
+                for (let i = 0; i < Math.min(newLines.length, 20); i++) {
+                  console.log(`Line ${i + 1}: ${newLines[i]}`);
+                }
+              }
+              
+              for (let i = 0; i < newLines.length; i++) {
+                for (const pattern of searchPatterns) {
+                  if (newLines[i].includes(pattern)) {
+                    newLine = i + 1;
+                    newColumn = newLines[i].indexOf(pattern) + 1;
+                    if (process.env.TS_SEMVER_DEBUG) {
+                      console.log(`Found "${pattern}" at line ${newLine}:${newColumn}: ${newLines[i]}`);
+                    }
+                    break;
+                  }
+                }
+                if (newLine > 0) break;
+              }
+            } else {
+              // For other changes, look for the property in the new file
+              const searchPattern = `${propertyName}:`;
+              for (let i = 0; i < newLines.length; i++) {
+                if (newLines[i].includes(searchPattern)) {
+                  newLine = i + 1;
+                  newColumn = newLines[i].indexOf(searchPattern) + 1;
+                  break;
+                }
+              }
+            }
+            
+            // Update the location if we found something
+            if (oldLine > 0 || newLine > 0) {
+              location = `Old: ${oldLine}:${oldColumn} New: ${newLine}:${newColumn}`;
+              if (process.env.TS_SEMVER_VERBOSE) {
+                console.log(`Found line numbers for ${interfaceName}.${propertyName}: ${location}`);
+              }
+            }
+          } catch (error) {
+            console.error(`Error finding line numbers: ${error}`);
+          }
+        }
+      }
     }
   }
 

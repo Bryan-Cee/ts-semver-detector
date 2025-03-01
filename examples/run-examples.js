@@ -49,12 +49,20 @@ function runExample(exampleName) {
   printHeader(`Running ${examples[exampleName]} Example`);
 
   try {
-    const cmd = `node "${cliPath}" --old "${v1Path}" --new "${v2Path}"`;
-    const output = execSync(cmd, {
-      encoding: 'utf8',
-      stdio: ['pipe', 'pipe', 'pipe']
+    // Add --verbose flag to capture all logs
+    const cmd = `node "${cliPath}" --old "${v1Path}" --new "${v2Path}" --verbose`;
+    console.log(colors.yellow + `Running command: ${cmd}` + colors.reset);
+    
+    // Use spawnSync with stdio:'inherit' to see all console output
+    const { spawnSync } = require('child_process');
+    const result = spawnSync('node', [cliPath, '--old', v1Path, '--new', v2Path, '--verbose'], { 
+      stdio: 'inherit',
+      encoding: 'utf8'
     });
-    console.log(output);
+    
+    if (result.status !== 0) {
+      console.error(colors.red + `Process exited with code ${result.status}` + colors.reset);
+    }
   } catch (error) {
     if (error.stdout) {
       // If there's output, show it (ts-semver-detector shows analysis even with exit code 1)

@@ -32,7 +32,7 @@ export class FunctionRule extends BaseRule {
       // Get function name
       let funcName = 'anonymous';
       try {
-        funcName = oldFunc.name?.getText() || 'anonymous';
+        funcName = oldFunc.name ? this.parser.getNodeText(oldFunc.name) : 'anonymous';
       } catch (e) {
         console.error(`Error getting function name: ${e}`);
       }
@@ -42,13 +42,13 @@ export class FunctionRule extends BaseRule {
       let newReturnType: string | undefined;
       
       try {
-        oldReturnType = oldFunc.type?.getText();
+        oldReturnType = oldFunc.type ? this.parser.getNodeText(oldFunc.type) : undefined;
       } catch (e) {
         console.error(`Error getting old return type: ${e}`);
       }
       
       try {
-        newReturnType = newFunc.type?.getText();
+        newReturnType = newFunc.type ? this.parser.getNodeText(newFunc.type) : undefined;
       } catch (e) {
         console.error(`Error getting new return type: ${e}`);
       }
@@ -82,7 +82,7 @@ export class FunctionRule extends BaseRule {
             if (!newParam) {
               let paramName = 'unknown';
               try {
-                paramName = oldParam.name?.getText() || 'unknown';
+                paramName = oldParam.name ? this.parser.getNodeText(oldParam.name) : 'unknown';
               } catch (e) {
                 console.error(`Error getting parameter name: ${e}`);
               }
@@ -105,19 +105,19 @@ export class FunctionRule extends BaseRule {
             let paramName = 'unknown';
             
             try {
-              paramName = oldParam.name?.getText() || 'unknown';
+              paramName = oldParam.name ? this.parser.getNodeText(oldParam.name) : 'unknown';
             } catch (e) {
               console.error(`Error getting parameter name: ${e}`);
             }
             
             try {
-              oldParamType = oldParam.type?.getText();
+              oldParamType = oldParam.type ? this.parser.getNodeText(oldParam.type) : undefined;
             } catch (e) {
               console.error(`Error getting old parameter type: ${e}`);
             }
             
             try {
-              newParamType = newParam.type?.getText();
+              newParamType = newParam.type ? this.parser.getNodeText(newParam.type) : undefined;
             } catch (e) {
               console.error(`Error getting new parameter type: ${e}`);
             }
@@ -175,7 +175,7 @@ export class FunctionRule extends BaseRule {
             
             let paramName = 'unknown';
             try {
-              paramName = newParam.name?.getText() || 'unknown';
+              paramName = newParam.name ? this.parser.getNodeText(newParam.name) : 'unknown';
             } catch (e) {
               console.error(`Error getting parameter name: ${e}`);
             }
