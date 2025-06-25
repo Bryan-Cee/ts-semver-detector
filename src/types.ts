@@ -1,23 +1,13 @@
-import { BaseRule } from './rules/base-rule';
-import * as ts from 'typescript';
+import { BaseRule } from "./rules/base-rule";
+import * as ts from "typescript";
 
-export type Severity = 'major' | 'minor' | 'patch' | 'none';
+export type Severity = "major" | "minor" | "patch" | "none";
 export type ChangeType =
-  | 'interface'
-  | 'type'
-  | 'function'
-  | 'class'
-  | 'unknown';
-
-export interface Location {
-  line: number;
-  column: number;
-}
-
-export interface ChangeLocation {
-  line: number;
-  column: number;
-}
+  | "interface"
+  | "type"
+  | "function"
+  | "class"
+  | "unknown";
 
 export interface Rule {
   id: string;
@@ -32,10 +22,6 @@ export interface Change {
   name: string;
   severity: Severity;
   description: string;
-  location?: {
-    oldFile?: ChangeLocation;
-    newFile?: ChangeLocation;
-  };
   details?: Record<string, unknown>;
   oldType?: string;
   newType?: string;
@@ -76,7 +62,7 @@ export interface ParserOptions extends AnalyzerConfig {
 export interface CliOptions extends AnalyzerConfig {
   oldFile: string;
   newFile: string;
-  format?: 'json' | 'text' | 'html';
+  format?: "json";
   output?: string;
   verbose?: boolean;
   config?: string;

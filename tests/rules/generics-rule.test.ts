@@ -18,8 +18,7 @@ describe('GenericsRule', () => {
           name,
           change: this.id,
           severity,
-          description,
-          location: {}
+          description
         };
       }
       

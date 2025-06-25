@@ -6,9 +6,8 @@ This directory contains various examples demonstrating how to use the ts-semver-
 
 - **dom-apis** - Changes to DOM-related TypeScript definitions
 - **react-components** - Changes to React component type definitions
-- **web-patterns** - Changes to web API pattern type definitions 
+- **web-patterns** - Changes to web API pattern type definitions
 - **state-management** - Changes to state management type definitions
-- **html-output** - Demonstrates using HTML output format for visual reports
 
 ## Running Examples
 
@@ -53,4 +52,4 @@ examples/
           └── index.d.ts    # Modified TypeScript definitions
 ```
 
-The `run-examples.js` script will automatically compare the v1 and v2 definitions and output the detected changes. 
+The `run-examples.js` script will automatically compare the v1 and v2 definitions and output the detected changes.

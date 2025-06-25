@@ -11,7 +11,7 @@ A command-line tool that analyzes changes between TypeScript definition files (.
   - Type changes
   - Function signature changes
   - Export additions/removals
-- Provides detailed change reports in multiple formats (text, JSON, HTML)
+- Provides detailed change reports in JSON format
 - Includes location information for each change
 - Supports CI/CD integration
 - Configurable rules and behavior
@@ -26,20 +26,22 @@ npm install -g ts-semver-detector
 ## Usage
 
 Basic usage:
+
 ```bash
 ts-semver-detector --old oldFile.d.ts --new newFile.d.ts
 ```
 
 With options:
+
 ```bash
-ts-semver-detector --old oldFile.d.ts --new newFile.d.ts --format html --output report.html --config ./config.js
+ts-semver-detector --old oldFile.d.ts --new newFile.d.ts --output report.json --config ./config.js
 ```
 
 ### Options
 
 - `--old <file>`: Path to the old .d.ts file (required)
 - `--new <file>`: Path to the new .d.ts file (required)
-- `--format <type>`: Output format (json, text, html) (default: "text")
+- `--format <type>`: Output format (json) (default: "json")
 - `--output <file>`: Output file path
 - `--verbose`: Show detailed information about changes
 - `--config <file>`: Path to config file
@@ -51,6 +53,7 @@ ts-semver-detector --old oldFile.d.ts --new newFile.d.ts --format html --output 
 ## Configuration
 
 The tool can be configured using a configuration file. It supports the following formats:
+
 - JavaScript file (ts-semver-detector.config.js)
 - JSON file (ts-semver-detector.config.json)
 - RC file (.ts-semver-detectorrc, .ts-semver-detectorrc.json, .ts-semver-detectorrc.js)
@@ -61,22 +64,22 @@ Example configuration file:
 module.exports = {
   // Patterns to ignore when analyzing files
   ignorePatterns: [
-    '**/node_modules/**',
-    '**/dist/**',
-    '**/build/**',
-    '**/*.test.d.ts'
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/*.test.d.ts",
   ],
 
   // Override rule severities
   ruleOverrides: [
     {
-      id: 'interface-change',
-      severity: 'major' // Always treat interface changes as major
+      id: "interface-change",
+      severity: "major", // Always treat interface changes as major
     },
     {
-      id: 'type-change',
-      enabled: false // Disable type change detection
-    }
+      id: "type-change",
+      enabled: false, // Disable type change detection
+    },
   ],
 
   // General options
@@ -86,7 +89,7 @@ module.exports = {
   treatUndefinedAsAny: false,
 
   // Custom rules can be added here
-  customRules: []
+  customRules: [],
 };
 ```
 
@@ -107,14 +110,15 @@ Rule overrides allow you to customize the behavior of built-in rules:
 ```javascript
 ruleOverrides: [
   {
-    id: 'rule-id',          // Rule identifier
-    severity: 'major',      // Override severity (major, minor, patch)
-    enabled: true           // Enable/disable the rule
-  }
-]
+    id: "rule-id", // Rule identifier
+    severity: "major", // Override severity (major, minor, patch)
+    enabled: true, // Enable/disable the rule
+  },
+];
 ```
 
 Available rules:
+
 - `interface-change`: Detects changes in interface declarations
 - `type-change`: Detects changes in type aliases
 - `function-change`: Detects changes in function signatures
@@ -136,24 +140,24 @@ Example custom rule:
 
 ```typescript
 class CustomRule implements Rule {
-  id = 'custom-rule';
-  description = 'Custom rule description';
+  id = "custom-rule";
+  description = "Custom rule description";
 
   analyze(oldNode: ts.Node, newNode: ts.Node): Change | null {
     // Implement your rule logic here
     return {
-      type: 'other',
-      name: 'custom',
+      type: "other",
+      name: "custom",
       change: this.id,
-      severity: 'major',
-      description: 'Custom change detected'
+      severity: "major",
+      description: "Custom change detected",
     };
   }
 }
 
 // Add to configuration
 module.exports = {
-  customRules: [new CustomRule()]
+  customRules: [new CustomRule()],
 };
 ```
 
@@ -162,6 +166,7 @@ module.exports = {
 The tool classifies changes according to semantic versioning principles:
 
 ### MAJOR Version Bump (Breaking Changes)
+
 - Removing exported declarations
 - Narrowing type definitions
 - Adding required properties to interfaces
@@ -170,6 +175,7 @@ The tool classifies changes according to semantic versioning principles:
 - Changing public members to private/protected
 
 ### MINOR Version Bump (Backwards-Compatible Additions)
+
 - Adding new exports
 - Adding optional properties
 - Broadening type definitions
@@ -178,6 +184,7 @@ The tool classifies changes according to semantic versioning principles:
 - Adding implemented interfaces
 
 ### PATCH Version Bump
+
 - Documentation changes
 - Formatting changes
 - No functional changes
@@ -186,6 +193,7 @@ The tool classifies changes according to semantic versioning principles:
 ## Output Formats
 
 ### Text Output
+
 ```
 TypeScript Definition Changes Analysis
 
@@ -204,6 +212,7 @@ Patch Changes: 0
 ```
 
 ### JSON Output
+
 ```json
 {
   "recommendedVersionBump": "major",
@@ -237,7 +246,7 @@ name: API Version Check
 on:
   pull_request:
     paths:
-      - '**/*.d.ts'
+      - "**/*.d.ts"
 
 jobs:
   check-version:
@@ -247,7 +256,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '16'
+          node-version: "16"
       - name: Install ts-semver-detector
         run: npm install -g ts-semver-detector
       - name: Check TypeScript API changes
@@ -266,10 +275,10 @@ api-version-check:
   script:
     - npm install -g ts-semver-detector
     - ts-semver-detector \
-        --old ${CI_MERGE_REQUEST_DIFF_BASE_SHA}:types/index.d.ts \
-        --new ${CI_MERGE_REQUEST_TARGET_BRANCH_SHA}:types/index.d.ts \
-        --format json \
-        --output changes.json
+      --old ${CI_MERGE_REQUEST_DIFF_BASE_SHA}:types/index.d.ts \
+      --new ${CI_MERGE_REQUEST_TARGET_BRANCH_SHA}:types/index.d.ts \
+      --format json \
+      --output changes.json
   only:
     - merge_requests
   changes:

@@ -22,7 +22,7 @@ const examples = {
   'web-patterns': 'Web API Patterns',
   'dom-apis': 'DOM API Types',
   'state-management': 'State Management Types',
-  'html-output': 'HTML Output Format Example',
+  'html-output': 'JSON Output Format Example',
 };
 
 function printHeader(text) {
@@ -52,14 +52,14 @@ function runExample(exampleName) {
     // Add --verbose flag to capture all logs
     const cmd = `node "${cliPath}" --old "${v1Path}" --new "${v2Path}" --verbose`;
     console.log(colors.yellow + `Running command: ${cmd}` + colors.reset);
-    
+
     // Use spawnSync with stdio:'inherit' to see all console output
     const { spawnSync } = require('child_process');
-    const result = spawnSync('node', [cliPath, '--old', v1Path, '--new', v2Path, '--verbose'], { 
+    const result = spawnSync('node', [cliPath, '--old', v1Path, '--new', v2Path, '--verbose'], {
       stdio: 'inherit',
       encoding: 'utf8'
     });
-    
+
     if (result.status !== 0) {
       console.error(colors.red + `Process exited with code ${result.status}` + colors.reset);
     }
@@ -89,4 +89,4 @@ if (targetExample) {
 } else {
   printHeader('Running All Examples');
   Object.keys(examples).forEach(runExample);
-} 
+}
