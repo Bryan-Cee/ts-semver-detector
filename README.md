@@ -8,9 +8,11 @@ A command-line tool that analyzes changes between TypeScript definition files (.
 - Determines appropriate semantic version bump (MAJOR, MINOR, PATCH)
 - Detects various types of changes:
   - Interface modifications
-  - Type changes
+  - Type changes (including union types and conditional types)
   - Function signature changes
   - Export additions/removals
+  - Conditional type analysis (new in v0.3.0)
+  - Mapped type changes
 - Provides detailed change reports in JSON format
 - Includes location information for each change
 - Supports CI/CD integration
@@ -123,6 +125,8 @@ Available rules:
 - `type-change`: Detects changes in type aliases
 - `function-change`: Detects changes in function signatures
 - `class-change`: Detects changes in class declarations
+- `conditional-type-change`: Detects changes in conditional types (v0.3.0+)
+- `mapped-type-change`: Detects changes in mapped types
 
 #### Custom Rules
 
@@ -189,6 +193,60 @@ The tool classifies changes according to semantic versioning principles:
 - Formatting changes
 - No functional changes
 - Equivalent type reformatting
+
+## Conditional Type Analysis (New in v0.3.0)
+
+The tool now provides comprehensive analysis of conditional type changes, which are critical for maintaining type safety in complex TypeScript libraries.
+
+### Conditional Type Changes
+
+Conditional types follow the pattern `T extends U ? X : Y` and changes to them are classified as follows:
+
+#### MAJOR Changes (Breaking)
+
+- **Narrowed conditions**: Making the condition more restrictive
+
+  ```typescript
+  // Old: More permissive condition
+  type IsString<T> = T extends string | number ? true : false;
+
+  // New: More restrictive condition (MAJOR)
+  type IsString<T> = T extends string ? true : false;
+  ```
+
+- **Changed default branch to `never`**: Making the fallback case more restrictive
+
+  ```typescript
+  // Old: Fallback returns the original type
+  type UnwrapPromise<T> = T extends Promise<infer U> ? U : T;
+
+  // New: Fallback returns never (MAJOR)
+  type UnwrapPromise<T> = T extends Promise<infer U> ? U : never;
+  ```
+
+#### MINOR Changes (Backwards-Compatible)
+
+- **Broadened conditions**: Making the condition more permissive
+
+  ```typescript
+  // Old: More restrictive condition
+  type IsString<T> = T extends string ? true : false;
+
+  // New: More permissive condition (MINOR)
+  type IsString<T> = T extends string | number ? true : false;
+  ```
+
+- **Enhanced true/false branches**: Adding more specific return types
+
+  ```typescript
+  // Old: Simple boolean return
+  type IsString<T> = T extends string ? true : false;
+
+  // New: More specific return types (MINOR)
+  type IsString<T> = T extends string ? "string" : "not-string";
+  ```
+
+The analyzer automatically detects these patterns and classifies them appropriately, helping you maintain semantic versioning compliance when working with complex conditional types.
 
 ## Output Formats
 
