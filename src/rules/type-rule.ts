@@ -58,10 +58,20 @@ export class TypeRule extends BaseRule {
         changes.push(...propertyChanges);
       }
 
+      // Check for conditional type changes first (before generic type change check)
+      if (
+        this.isConditionalTypeNode(oldType.type) &&
+        this.isConditionalTypeNode(newType.type)
+      ) {
+        const conditionalChanges = this.analyzeConditionalTypeChanges(
+          oldType.type as ts.ConditionalTypeNode,
+          newType.type as ts.ConditionalTypeNode,
+          name
+        );
+        changes.push(...conditionalChanges);
+      }
       // Check if type has changed
-      const typeChanged = this.hasTypeChanged(oldType.type, newType.type);
-
-      if (typeChanged) {
+      else if (this.hasTypeChanged(oldType.type, newType.type)) {
         const oldTypeText = this.getTypeNodeText(oldType.type);
         const newTypeText = this.getTypeNodeText(newType.type);
 
@@ -111,6 +121,7 @@ export class TypeRule extends BaseRule {
           this.isConditionalTypeNode(oldType.type) &&
           this.isConditionalTypeNode(newType.type)
         ) {
+          // This case should be handled above, but kept for safety
           const conditionalChanges = this.analyzeConditionalTypeChanges(
             oldType.type as ts.ConditionalTypeNode,
             newType.type as ts.ConditionalTypeNode,
@@ -228,6 +239,19 @@ export class TypeRule extends BaseRule {
           return "undefined";
         } else if (typeNode.kind === ts.SyntaxKind.NullKeyword) {
           return "null";
+        } else if (typeNode.kind === ts.SyntaxKind.NeverKeyword) {
+          return "never";
+        } else if (ts.isConditionalTypeNode(typeNode)) {
+          // For conditional types, try to construct the actual syntax
+          try {
+            const checkType = this.getTypeNodeText(typeNode.checkType);
+            const extendsType = this.getTypeNodeText(typeNode.extendsType);
+            const trueType = this.getTypeNodeText(typeNode.trueType);
+            const falseType = this.getTypeNodeText(typeNode.falseType);
+            return `${checkType} extends ${extendsType} ? ${trueType} : ${falseType}`;
+          } catch {
+            return "conditional-type";
+          }
         } else if (ts.isTypeReferenceNode(typeNode)) {
           // For type references like "Array<T>", try to get the type name
           try {
@@ -490,7 +514,8 @@ export class TypeRule extends BaseRule {
 
         // Special case for 'never' type in the false branch (common pattern for type narrowing)
         const isNeverChange =
-          oldFalseType !== "never" && newFalseType === "never";
+          oldFalseType !== "never" &&
+          (newFalseType === "never" || newFalseType === "NeverKeyword");
 
         changes.push({
           type: "type",
