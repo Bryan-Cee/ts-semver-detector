@@ -558,11 +558,6 @@ export class TypeRule extends BaseRule {
       }
     }
 
-    // Special case for the test
-    if (oldType === "string" && newType === "string | number") {
-      return true;
-    }
-
     return false;
   }
 

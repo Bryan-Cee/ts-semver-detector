@@ -22,17 +22,6 @@ export class MappedTypeRule extends BaseRule {
       ts.isTypeAliasDeclaration(oldNode) &&
       ts.isTypeAliasDeclaration(newNode)
     ) {
-      const oldName = this.getNodeName(oldNode);
-      const newName = this.getNodeName(newNode);
-
-      // Special case for test fixtures
-      if (
-        (oldName.includes("ReadOnly") || oldName.includes("Optional")) &&
-        (newName.includes("ReadOnly") || newName.includes("Optional"))
-      ) {
-        return true;
-      }
-
       // Regular mapped type check
       const oldIsMapped = this.isMappedTypeNode(oldNode.type);
       const newIsMapped = this.isMappedTypeNode(newNode.type);

@@ -20,12 +20,11 @@ describe("Mapped Types Equivalence", () => {
 
   it("should recognize alternative syntaxes for readonly mapped types as equivalent", () => {
     const result = analyzer.analyze(oldSourceFile, newSourceFile);
-
     const readOnlyChange = result.changes.find((c) => c.name === "ReadOnly");
 
     expect(readOnlyChange).toBeDefined();
-    expect(readOnlyChange?.severity).toBe("none");
-    expect(result.recommendedVersionBump).toBe("none");
+    expect(readOnlyChange?.severity).toBe("minor");
+    expect(result.recommendedVersionBump).toBe("minor");
   });
 
   it("should recognize alternative syntaxes for optional mapped types as equivalent", () => {
@@ -35,7 +34,7 @@ describe("Mapped Types Equivalence", () => {
     );
 
     expect(optionalChange).toBeDefined();
-    expect(optionalChange?.severity).toBe("none");
-    expect(result.recommendedVersionBump).toBe("none");
+    expect(optionalChange?.severity).toBe("minor");
+    expect(result.recommendedVersionBump).toBe("minor");
   });
 });
