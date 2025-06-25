@@ -184,17 +184,51 @@ export class TypeRule extends BaseRule {
 
     try {
       // Use the parser's robust method to get text
-      return this.parser.getNodeText(typeNode);
+      const result = this.parser.getNodeText(typeNode);
+      return result;
     } catch (error) {
       console.error("Error getting type node text:", error);
 
-      // Return a generic string as last resort
-      if (ts.isUnionTypeNode(typeNode)) {
-        return "union-type";
-      } else if (ts.isIntersectionTypeNode(typeNode)) {
-        return "intersection-type";
-      } else if (ts.isTypeLiteralNode(typeNode)) {
-        return "object-type";
+      // Improved fallback: construct actual type syntax instead of generic names
+      try {
+        if (ts.isUnionTypeNode(typeNode)) {
+          // For union types, construct "type1 | type2 | ..." syntax
+          const memberTexts = typeNode.types.map(type => this.getTypeNodeText(type)).filter(text => text);
+          const result = memberTexts.length > 0 ? memberTexts.join(" | ") : "union-type";
+          return result;
+        } else if (ts.isIntersectionTypeNode(typeNode)) {
+          // For intersection types, construct "type1 & type2 & ..." syntax
+          const memberTexts = typeNode.types.map(type => this.getTypeNodeText(type)).filter(text => text);
+          const result = memberTexts.length > 0 ? memberTexts.join(" & ") : "intersection-type";
+          return result;
+        } else if (ts.isTypeLiteralNode(typeNode)) {
+          return "object-type";
+        } else if (typeNode.kind === ts.SyntaxKind.StringKeyword) {
+          return "string";
+        } else if (typeNode.kind === ts.SyntaxKind.NumberKeyword) {
+          return "number";
+        } else if (typeNode.kind === ts.SyntaxKind.BooleanKeyword) {
+          return "boolean";
+        } else if (typeNode.kind === ts.SyntaxKind.AnyKeyword) {
+          return "any";
+        } else if (typeNode.kind === ts.SyntaxKind.UnknownKeyword) {
+          return "unknown";
+        } else if (typeNode.kind === ts.SyntaxKind.VoidKeyword) {
+          return "void";
+        } else if (typeNode.kind === ts.SyntaxKind.UndefinedKeyword) {
+          return "undefined";
+        } else if (typeNode.kind === ts.SyntaxKind.NullKeyword) {
+          return "null";
+        } else if (ts.isTypeReferenceNode(typeNode)) {
+          // For type references like "Array<T>", try to get the type name
+          try {
+            return this.parser.getNodeText(typeNode.typeName);
+          } catch {
+            return "type-reference";
+          }
+        }
+      } catch (fallbackError) {
+        console.error("Error in fallback type text construction:", fallbackError);
       }
 
       return "";

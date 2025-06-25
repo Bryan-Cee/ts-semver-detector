@@ -1,6 +1,6 @@
-import * as ts from 'typescript';
-import * as fs from 'fs';
-import { AnalyzerConfig } from '../types';
+import * as ts from "typescript";
+import * as fs from "fs";
+import { AnalyzerConfig } from "../types";
 
 export class TypeScriptParser {
   private _program: ts.Program;
@@ -30,11 +30,13 @@ export class TypeScriptParser {
     return this._program.getTypeChecker();
   }
 
-  public getExportedDeclarations(sourceFile: ts.SourceFile | undefined): ts.Declaration[] {
+  public getExportedDeclarations(
+    sourceFile: ts.SourceFile | undefined
+  ): ts.Declaration[] {
     if (!sourceFile) {
       return [];
     }
-    
+
     const result: ts.Declaration[] = [];
     const visit = (node: ts.Node) => {
       try {
@@ -55,16 +57,16 @@ export class TypeScriptParser {
         }
         ts.forEachChild(node, visit);
       } catch (error) {
-        console.error('Error visiting node:', error);
+        console.error("Error visiting node:", error);
       }
     };
-    
+
     try {
       visit(sourceFile);
     } catch (error) {
-      console.error('Error visiting source file:', error);
+      console.error("Error visiting source file:", error);
     }
-    
+
     return result;
   }
 
@@ -128,7 +130,7 @@ export class TypeScriptParser {
    */
   public getNodeText(node: ts.Node): string {
     if (!node) {
-      return '';
+      return "";
     }
 
     try {
@@ -139,7 +141,9 @@ export class TypeScriptParser {
         // If direct getText fails, try to use the printer API
         const sourceFile = node.getSourceFile();
         if (sourceFile) {
-          return this._printer.printNode(ts.EmitHint.Unspecified, node, sourceFile).trim();
+          return this._printer
+            .printNode(ts.EmitHint.Unspecified, node, sourceFile)
+            .trim();
         }
       } catch (printError) {
         // Silent fail and continue to fallbacks
@@ -152,13 +156,51 @@ export class TypeScriptParser {
         if (ts.isIdentifier(node.name)) {
           return node.name.escapedText.toString();
         }
-      } else if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) {
+      } else if (
+        ts.isTypeReferenceNode(node) &&
+        ts.isIdentifier(node.typeName)
+      ) {
         return node.typeName.escapedText.toString();
+      } else if (ts.isUnionTypeNode(node)) {
+        // For union types, reconstruct "type1 | type2 | ..." syntax
+        const memberTexts = node.types
+          .map((type) => this.getNodeText(type))
+          .filter(
+            (text) =>
+              text && !text.endsWith("Keyword") && !text.endsWith("Type")
+          );
+        return memberTexts.length > 0 ? memberTexts.join(" | ") : "union-type";
+      } else if (ts.isIntersectionTypeNode(node)) {
+        // For intersection types, reconstruct "type1 & type2 & ..." syntax
+        const memberTexts = node.types
+          .map((type) => this.getNodeText(type))
+          .filter(
+            (text) =>
+              text && !text.endsWith("Keyword") && !text.endsWith("Type")
+          );
+        return memberTexts.length > 0
+          ? memberTexts.join(" & ")
+          : "intersection-type";
+      } else if (node.kind === ts.SyntaxKind.StringKeyword) {
+        return "string";
+      } else if (node.kind === ts.SyntaxKind.NumberKeyword) {
+        return "number";
+      } else if (node.kind === ts.SyntaxKind.BooleanKeyword) {
+        return "boolean";
+      } else if (node.kind === ts.SyntaxKind.AnyKeyword) {
+        return "any";
+      } else if (node.kind === ts.SyntaxKind.UnknownKeyword) {
+        return "unknown";
+      } else if (node.kind === ts.SyntaxKind.VoidKeyword) {
+        return "void";
+      } else if (node.kind === ts.SyntaxKind.UndefinedKeyword) {
+        return "undefined";
+      } else if (node.kind === ts.SyntaxKind.NullKeyword) {
+        return "null";
       }
 
       // Last resort
       return `${ts.SyntaxKind[node.kind]}`;
     }
   }
-
 }
