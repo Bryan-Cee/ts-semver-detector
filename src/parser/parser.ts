@@ -197,6 +197,60 @@ export class TypeScriptParser {
         return "undefined";
       } else if (node.kind === ts.SyntaxKind.NullKeyword) {
         return "null";
+      } else if (ts.isMappedTypeNode(node)) {
+        // Handle mapped type nodes specifically
+        try {
+          // Try to reconstruct mapped type syntax manually
+          const mappedType = node as ts.MappedTypeNode;
+          let result = "{ ";
+
+          // Add readonly modifier if present
+          if (mappedType.readonlyToken) {
+            if (mappedType.readonlyToken.kind === ts.SyntaxKind.PlusToken) {
+              result += "+readonly ";
+            } else if (
+              mappedType.readonlyToken.kind === ts.SyntaxKind.MinusToken
+            ) {
+              result += "-readonly ";
+            } else {
+              result += "readonly ";
+            }
+          }
+
+          // Add the key mapping: [K in keyof T]
+          result += "[";
+          if (mappedType.typeParameter) {
+            result += mappedType.typeParameter.name.text + " in ";
+            if (mappedType.typeParameter.constraint) {
+              result += this.getNodeText(mappedType.typeParameter.constraint);
+            }
+          }
+          result += "]";
+
+          // Add optional modifier if present
+          if (mappedType.questionToken) {
+            if (mappedType.questionToken.kind === ts.SyntaxKind.PlusToken) {
+              result += "+";
+            } else if (
+              mappedType.questionToken.kind === ts.SyntaxKind.MinusToken
+            ) {
+              result += "-";
+            }
+            result += "?";
+          }
+
+          // Add the type
+          result += ": ";
+          if (mappedType.type) {
+            result += this.getNodeText(mappedType.type);
+          }
+
+          result += " }";
+          return result;
+        } catch (mappedError) {
+          console.error("Error reconstructing mapped type:", mappedError);
+          return "mapped-type";
+        }
       }
 
       // Last resort

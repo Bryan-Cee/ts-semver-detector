@@ -34,10 +34,10 @@ export class MappedTypeRule extends BaseRule {
       }
 
       // Regular mapped type check
-      return (
-        this.isMappedTypeNode(oldNode.type) &&
-        this.isMappedTypeNode(newNode.type)
-      );
+      const oldIsMapped = this.isMappedTypeNode(oldNode.type);
+      const newIsMapped = this.isMappedTypeNode(newNode.type);
+
+      return oldIsMapped && newIsMapped;
     }
 
     return false;
@@ -97,9 +97,9 @@ export class MappedTypeRule extends BaseRule {
       );
 
       if (!isEquivalent) {
-        changes.push({
-          type: "type",
-          change: "mappedType",
+        const change: Change = {
+          type: "type" as const,
+          change: "mappedType" as const,
           name,
           severity,
           description: `${reason} in mapped type ${name}`,
@@ -108,7 +108,23 @@ export class MappedTypeRule extends BaseRule {
             newType: this.getNormalizedMappedTypeText(newType.type),
             overrideDefault: true,
           },
-        });
+        };
+        changes.push(change);
+      } else {
+        // Create a 'none' severity change to indicate equivalence and prevent other rules from processing
+        const equivalentChange: Change = {
+          type: "type" as const,
+          change: "mappedType" as const,
+          name,
+          severity: "none",
+          description: `${reason} - equivalent mapped type syntaxes`,
+          details: {
+            oldType: this.getNormalizedMappedTypeText(oldType.type),
+            newType: this.getNormalizedMappedTypeText(newType.type),
+            overrideDefault: true,
+          },
+        };
+        changes.push(equivalentChange);
       }
 
       return changes;
@@ -192,14 +208,19 @@ export class MappedTypeRule extends BaseRule {
       const nodeText = this.parser.getNodeText(typeNode);
 
       // Check for different readonly syntax patterns:
-      // 1. readonly [K in keyof T]
-      // 2. +readonly [K in keyof T]
-      // 3. readonly+ [K in keyof T]
-      return (
-        nodeText.includes("readonly [") ||
-        nodeText.includes("+readonly [") ||
-        nodeText.includes("readonly+ [")
-      );
+      // 1. readonly [K in keyof T] (with space)
+      // 2. +readonly [K in keyof T] (with space)
+      // 3. readonly+ [K in keyof T] (with space)
+      // Also check for patterns without spaces for robustness
+      const hasReadonly =
+        nodeText.includes("readonly ") ||
+        nodeText.includes("+readonly ") ||
+        nodeText.includes("readonly+ ") ||
+        nodeText.includes("readonly[") ||
+        nodeText.includes("+readonly[") ||
+        nodeText.includes("readonly+[");
+
+      return hasReadonly;
     } catch (error) {
       console.error("Error checking for readonly modifier:", error);
       return false;
@@ -215,14 +236,15 @@ export class MappedTypeRule extends BaseRule {
       const nodeText = this.parser.getNodeText(typeNode);
 
       // Check for different optional syntax patterns:
-      // 1. [K in keyof T]?
-      // 2. [K in keyof T]+?
-      // 3. [K in keyof T]?+
-      return (
+      // 1. [K in keyof T]?: (standard optional)
+      // 2. [K in keyof T]+?: (explicit optional)
+      // 3. [K in keyof T]?+: (alternative syntax)
+      const hasOptional =
         nodeText.includes("?:") ||
         nodeText.includes("+?:") ||
-        nodeText.includes("?+:")
-      );
+        nodeText.includes("?+:");
+
+      return hasOptional;
     } catch (error) {
       console.error("Error checking for optional modifier:", error);
       return false;
