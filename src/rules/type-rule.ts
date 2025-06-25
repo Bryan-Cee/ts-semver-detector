@@ -445,8 +445,6 @@ export class TypeRule extends BaseRule {
     const changes: Change[] = [];
 
     try {
-      const oldCheckType = this.getTypeNodeText(oldNode.checkType);
-      const newCheckType = this.getTypeNodeText(newNode.checkType);
       const oldExtendsType = this.getTypeNodeText(oldNode.extendsType);
       const newExtendsType = this.getTypeNodeText(newNode.extendsType);
       const oldTrueType = this.getTypeNodeText(oldNode.trueType);
@@ -622,7 +620,7 @@ export class TypeRule extends BaseRule {
       }
 
       // Check for removed properties
-      for (const [propName, oldProp] of oldProps.entries()) {
+      for (const propName of oldProps.keys()) {
         if (!newProps.has(propName)) {
           changes.push({
             type: "type",

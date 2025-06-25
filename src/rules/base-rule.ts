@@ -1,5 +1,4 @@
 import * as ts from 'typescript';
-import * as fs from 'fs';
 import { Change, Rule } from '../types';
 import { TypeScriptParser } from '../parser/parser';
 

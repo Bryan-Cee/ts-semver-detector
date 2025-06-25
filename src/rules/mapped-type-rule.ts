@@ -271,7 +271,7 @@ export class MappedTypeRule extends BaseRule {
     const nodeText = this.parser.getNodeText(typeNode);
 
     // Extract the value type after the colon in mapped type
-    const valueMatch = nodeText.match(/\]:\s*(.*?)[\};]/);
+    const valueMatch = nodeText.match(/]:\s*(.*?)[};]/);
     return valueMatch ? valueMatch[1].trim() : "";
   }
 

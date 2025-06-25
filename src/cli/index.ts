@@ -5,7 +5,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { TypeScriptDiffAnalyzer } from "../diff/analyzer";
 import { TypeScriptParser } from "../parser/parser";
-import { AnalysisResult, Change, Severity, ChangeType } from "../types";
+import { AnalysisResult } from "../types";
 import { ConfigLoader } from "../config/config-loader";
 
 const program = new Command();
