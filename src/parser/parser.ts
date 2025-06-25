@@ -161,14 +161,26 @@ export class TypeScriptParser {
         ts.isIdentifier(node.typeName)
       ) {
         return node.typeName.escapedText.toString();
+      } else if (ts.isLiteralTypeNode && ts.isLiteralTypeNode(node)) {
+        // Handle literal type nodes (like 'active', 'inactive', etc.)
+        const literal = node.literal;
+        if (ts.isStringLiteral(literal)) {
+          return `'${literal.text}'`;
+        } else if (ts.isNumericLiteral(literal)) {
+          return literal.text;
+        } else if (literal.kind === ts.SyntaxKind.TrueKeyword) {
+          return "true";
+        } else if (literal.kind === ts.SyntaxKind.FalseKeyword) {
+          return "false";
+        } else if (literal.kind === ts.SyntaxKind.NullKeyword) {
+          return "null";
+        }
+        return `literal-${ts.SyntaxKind[literal.kind]}`;
       } else if (ts.isUnionTypeNode(node)) {
         // For union types, reconstruct "type1 | type2 | ..." syntax
         const memberTexts = node.types
           .map((type) => this.getNodeText(type))
-          .filter(
-            (text) =>
-              text && !text.endsWith("Keyword") && !text.endsWith("Type")
-          );
+          .filter((text) => text && text.trim().length > 0);
         return memberTexts.length > 0 ? memberTexts.join(" | ") : "union-type";
       } else if (ts.isIntersectionTypeNode(node)) {
         // For intersection types, reconstruct "type1 & type2 & ..." syntax

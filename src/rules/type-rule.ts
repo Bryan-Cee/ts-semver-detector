@@ -60,6 +60,7 @@ export class TypeRule extends BaseRule {
 
       // Check if type has changed
       const typeChanged = this.hasTypeChanged(oldType.type, newType.type);
+
       if (typeChanged) {
         const oldTypeText = this.getTypeNodeText(oldType.type);
         const newTypeText = this.getTypeNodeText(newType.type);
@@ -193,13 +194,21 @@ export class TypeRule extends BaseRule {
       try {
         if (ts.isUnionTypeNode(typeNode)) {
           // For union types, construct "type1 | type2 | ..." syntax
-          const memberTexts = typeNode.types.map(type => this.getTypeNodeText(type)).filter(text => text);
-          const result = memberTexts.length > 0 ? memberTexts.join(" | ") : "union-type";
+          const memberTexts = typeNode.types
+            .map((type) => this.getTypeNodeText(type))
+            .filter((text) => text);
+          const result =
+            memberTexts.length > 0 ? memberTexts.join(" | ") : "union-type";
           return result;
         } else if (ts.isIntersectionTypeNode(typeNode)) {
           // For intersection types, construct "type1 & type2 & ..." syntax
-          const memberTexts = typeNode.types.map(type => this.getTypeNodeText(type)).filter(text => text);
-          const result = memberTexts.length > 0 ? memberTexts.join(" & ") : "intersection-type";
+          const memberTexts = typeNode.types
+            .map((type) => this.getTypeNodeText(type))
+            .filter((text) => text);
+          const result =
+            memberTexts.length > 0
+              ? memberTexts.join(" & ")
+              : "intersection-type";
           return result;
         } else if (ts.isTypeLiteralNode(typeNode)) {
           return "object-type";
@@ -228,7 +237,10 @@ export class TypeRule extends BaseRule {
           }
         }
       } catch (fallbackError) {
-        console.error("Error in fallback type text construction:", fallbackError);
+        console.error(
+          "Error in fallback type text construction:",
+          fallbackError
+        );
       }
 
       return "";
