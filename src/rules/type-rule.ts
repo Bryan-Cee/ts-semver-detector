@@ -58,6 +58,18 @@ export class TypeRule extends BaseRule {
         changes.push(...propertyChanges);
       }
 
+      // Check for function type changes
+      if (
+        this.isFunctionTypeNode(oldType.type) &&
+        this.isFunctionTypeNode(newType.type)
+      ) {
+        const functionChanges = this.analyzeFunctionTypeChanges(
+          oldType.type as ts.FunctionTypeNode,
+          newType.type as ts.FunctionTypeNode,
+          name
+        );
+        changes.push(...functionChanges);
+      }
       // Check for conditional type changes first (before generic type change check)
       if (
         this.isConditionalTypeNode(oldType.type) &&
@@ -426,6 +438,162 @@ export class TypeRule extends BaseRule {
       console.error("Error checking template literal expansion:", error);
       return false;
     }
+  }
+
+  private isFunctionTypeNode(node: ts.TypeNode): boolean {
+    return ts.isFunctionTypeNode(node);
+  }
+
+  private analyzeFunctionTypeChanges(
+    oldNode: ts.FunctionTypeNode,
+    newNode: ts.FunctionTypeNode,
+    typeName: string
+  ): Change[] {
+    const changes: Change[] = [];
+
+    try {
+      // Compare parameters
+      const oldParams = oldNode.parameters;
+      const newParams = newNode.parameters;
+
+      // Check for parameter count changes
+      if (oldParams.length !== newParams.length) {
+        if (newParams.length > oldParams.length) {
+          // Added parameters - check if they're optional
+          for (let i = oldParams.length; i < newParams.length; i++) {
+            const newParam = newParams[i];
+            const isOptional =
+              !!newParam.questionToken || !!newParam.initializer;
+
+            changes.push({
+              type: "type",
+              change: "functionParameterAdded",
+              name: typeName,
+              severity: isOptional ? "minor" : "major",
+              description: `Added ${
+                isOptional ? "optional" : "required"
+              } parameter to function type ${typeName}`,
+              details: {
+                parameterIndex: i,
+                isOptional,
+              },
+            });
+          }
+        } else {
+          // Removed parameters - always major
+          changes.push({
+            type: "type",
+            change: "functionParameterRemoved",
+            name: typeName,
+            severity: "major",
+            description: `Removed parameter(s) from function type ${typeName}`,
+            details: {
+              oldParameterCount: oldParams.length,
+              newParameterCount: newParams.length,
+            },
+          });
+        }
+      }
+
+      // Check for parameter type changes
+      const minParams = Math.min(oldParams.length, newParams.length);
+      for (let i = 0; i < minParams; i++) {
+        const oldParam = oldParams[i];
+        const newParam = newParams[i];
+
+        // Check parameter type changes
+        if (oldParam.type && newParam.type) {
+          const oldParamType = this.getTypeNodeText(oldParam.type);
+          const newParamType = this.getTypeNodeText(newParam.type);
+
+          if (oldParamType !== newParamType) {
+            const isBroadening = this.isTypeBroadened(
+              oldParamType,
+              newParamType
+            );
+
+            changes.push({
+              type: "type",
+              change: "functionParameterTypeChanged",
+              name: typeName,
+              severity: isBroadening ? "minor" : "major",
+              description: `Changed parameter type in function type ${typeName} from '${oldParamType}' to '${newParamType}'`,
+              details: {
+                parameterIndex: i,
+                oldType: oldParamType,
+                newType: newParamType,
+                isBroadening,
+              },
+            });
+          }
+        }
+
+        // Check optionality changes
+        const oldOptional = !!oldParam.questionToken || !!oldParam.initializer;
+        const newOptional = !!newParam.questionToken || !!newParam.initializer;
+
+        if (oldOptional && !newOptional) {
+          changes.push({
+            type: "type",
+            change: "functionParameterOptionalityChanged",
+            name: typeName,
+            severity: "major",
+            description: `Made parameter required in function type ${typeName}`,
+            details: {
+              parameterIndex: i,
+              becameRequired: true,
+            },
+          });
+        } else if (!oldOptional && newOptional) {
+          changes.push({
+            type: "type",
+            change: "functionParameterOptionalityChanged",
+            name: typeName,
+            severity: "minor",
+            description: `Made parameter optional in function type ${typeName}`,
+            details: {
+              parameterIndex: i,
+              becameOptional: true,
+            },
+          });
+        }
+      }
+
+      // Compare return types
+      if (oldNode.type && newNode.type) {
+        const oldReturnType = this.getTypeNodeText(oldNode.type);
+        const newReturnType = this.getTypeNodeText(newNode.type);
+
+        if (oldReturnType !== newReturnType) {
+          const isNarrowing = this.isTypeNarrowing(
+            oldReturnType,
+            newReturnType
+          );
+          const isBroadening = this.isTypeBroadened(
+            oldReturnType,
+            newReturnType
+          );
+
+          changes.push({
+            type: "type",
+            change: "functionReturnTypeChanged",
+            name: typeName,
+            severity: isNarrowing ? "major" : isBroadening ? "minor" : "major",
+            description: `Changed return type in function type ${typeName} from '${oldReturnType}' to '${newReturnType}'`,
+            details: {
+              oldReturnType,
+              newReturnType,
+              isNarrowing,
+              isBroadening,
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`Error analyzing function type ${typeName}:`, error);
+    }
+
+    return changes;
   }
 
   private isConditionalTypeNode(node: ts.TypeNode): boolean {
